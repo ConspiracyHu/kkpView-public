@@ -5,6 +5,7 @@
 #include <tchar.h>
 #include "kkp.h"
 #include <unordered_map>
+#include "profont.h"
 
 static ID3D11Device*            g_pd3dDevice = nullptr;
 static ID3D11DeviceContext*     g_pd3dDeviceContext = nullptr;
@@ -752,7 +753,8 @@ INT WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
-    io.Fonts->AddFontFromFileTTF("ProfontPixelated.ttf", 11.0f);
+    auto profont = ImGui::GetIO().Fonts->AddFontFromMemoryCompressedTTF(profont_compressed_data, profont_compressed_size, 11.0f);
+    //io.Fonts->AddFontFromFileTTF("ProfontPixelated.ttf", 11.0f);
 
     ImVec4 clear_color = ImVec4(0, 0, 0, 1.00f);
 
