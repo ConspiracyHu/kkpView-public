@@ -6,7 +6,9 @@ class KKP
 {
 public:
 
-    struct KKPFile
+#pragma pack(push)
+#pragma pack(1)
+  struct KKPFile
     {
         std::string name;
         int size = 0;
@@ -38,6 +40,8 @@ public:
         short line = 0;
         short file = 0;
     };
+
+#pragma pack(pop)
 
     KKPSymbol root;
 
