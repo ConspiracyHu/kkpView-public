@@ -11,10 +11,10 @@ jobs:
         submodules: recursive
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
-    - name: Build Debug|Win32
-      run: msbuild .\KKPViewer\KKPViewer.sln /p:Configuration=Debug /p:Platform=Win32
-    - name: Build Release|Win32
-      run: msbuild .\KKPViewer\KKPViewer.sln /p:Configuration=Release /p:Platform=Win32
+    - name: Build Debug|x86
+      run: msbuild .\KKPViewer\KKPViewer.sln /p:Configuration=Debug /p:Platform=x86
+    - name: Build Release|x86
+      run: msbuild .\KKPViewer\KKPViewer.sln /p:Configuration=Release /p:Platform=x86
     - name: Build Debug|x64
       run: msbuild .\KKPViewer\KKPViewer.sln /p:Configuration=Debug /p:Platform=x64
     - name: Build Release|x64
