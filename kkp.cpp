@@ -402,6 +402,10 @@ void KKP::LoadSym(const std::string& fileName)
     if (!fread_s(&symbolCount, 4, 4, 1, reader))
       goto closeFile;
 
+    int maxSymbolID = 0;
+    for (auto& symbol : kkp.sortableSymbols)
+      maxSymbolID = max(maxSymbolID, symbol.originalSymbolID) + 1;
+
     for (int x = 0; x < symbolCount; x++)
     {
       KKP::KKPSymbol symbol;
@@ -409,13 +413,18 @@ void KKP::LoadSym(const std::string& fileName)
       symbol.isCode = false;
       symbol.fileID = -1;
       symbol.sourcePos = -1;
-      symbol.originalSymbolID = x + (int)kkp.sortableSymbols.size();
+      symbol.originalSymbolID = x + maxSymbolID;
       newSymbols.emplace_back(symbol);
     }
 
     for (int x = symbolStart; x < symbolStart + dataSize; x++)
     {
       unsigned short symSymbol;
+
+      if (x - symbolStart == 3925)
+      {
+        int z = 0;
+      }
 
       if (!fread_s(&symSymbol, 2, 2, 1, reader))
         goto closeFile;
