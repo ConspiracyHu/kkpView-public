@@ -837,7 +837,7 @@ INT WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
                 ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
 
             // Horizontal Splitter
-            ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(ImGui::GetCursorScreenPos().x, ImGui::GetCursorScreenPos().y + splitterThickness / 2), ImVec2(ImGui::GetCursorScreenPos().x + windowSize.x, ImGui::GetCursorScreenPos().y + splitterThickness / 2 + 1), isHovering ? 0xff985317 : 0xff403b3b);
+            ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(splitterPos.x, splitterPos.y + splitterThickness / 2), ImVec2(splitterPos.x + windowSize.x, splitterPos.y + splitterThickness / 2 + 1), isHovering ? 0xff985317 : 0xff403b3b);
 
             ImGui::InvisibleButton("hsplitter", ImVec2(-1, splitterThickness));
             if (ImGui::IsItemActive())
@@ -860,13 +860,13 @@ INT WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
         ImVec2 splitterPos = ImGui::GetCursorScreenPos();
 
         bool isHovering = mousePos.x >= splitterPos.x && mousePos.x < splitterPos.x + splitterThickness &&
-                            mousePos.y >= splitterPos.y && mousePos.y < splitterPos.y + ImGui::GetContentRegionAvail().x;
+                          mousePos.y >= splitterPos.y && mousePos.y < splitterPos.y + ImGui::GetContentRegionAvail().y;
 
         if (isHovering || ImGui::IsItemActive())
             ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
 
         // Vertical Splitter
-        ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(ImGui::GetCursorScreenPos().x + splitterThickness / 2, ImGui::GetCursorScreenPos().y), ImVec2(ImGui::GetCursorScreenPos().x + splitterThickness / 2 + 1, ImGui::GetCursorScreenPos().y + windowSize.y), isHovering ? 0xff985317 : 0xff403b3b);
+        ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(splitterPos.x + splitterThickness / 2, splitterPos.y), ImVec2(splitterPos.x + splitterThickness / 2 + 1, splitterPos.y + windowSize.y), isHovering ? 0xff985317 : 0xff403b3b);
 
         ImGui::InvisibleButton("vsplitter", ImVec2(splitterThickness, -1));
         if (ImGui::IsItemActive())
