@@ -6,6 +6,7 @@ File format descriptions follow.
 ## KKP file format
 Used to describe a binary file with all its contents and compression statistics, including symbol info
 
+```
 4 bytes: FOURCC: 'KK64'
 4 bytes: size of described binary in bytes (Ds)
 4 bytes: number of source code files (Cc)
@@ -33,9 +34,12 @@ Ds times: (for each byte of the described binary)
 	double: packed size
 	2 bytes: source code line
 	2 bytes: source code file index
+```
+
 ## SYM file format
 Used to describe the contents of the a symbol inside a kkp file to enable more precise analysis of an embedded resource
 
+```
 4 bytes: FOURCC: 'PHXP'
 ASCIIZ string: symbol name
 4 bytes: symbol data size (Ds)
@@ -44,3 +48,4 @@ For each symbol (Sc)
 	ASCIIZ string: symbol name
 For each byte in the symbol (Ds)
 	2 bytes: symbol index
+```
