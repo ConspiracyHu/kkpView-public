@@ -798,7 +798,7 @@ INT WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
         if (ImGui::BeginMenu("File", true))
         {
-            if (ImGui::MenuItem("Open kkm file", nullptr, nullptr, true))
+            if (ImGui::MenuItem("Open kkp file", nullptr, nullptr, true))
             {
                 OpenKKP();
                 openedSource = -1;
