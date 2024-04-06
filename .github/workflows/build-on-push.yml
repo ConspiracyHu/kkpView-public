@@ -19,3 +19,10 @@ jobs:
       run: msbuild .\KKPViewer\KKPViewer.sln /p:Configuration=Debug /p:Platform=x64
     - name: Build Release|x64
       run: msbuild .\KKPViewer\KKPViewer.sln /p:Configuration=Release /p:Platform=x64
+    - name: Build failure check
+      if: ${{ failure() }}
+      uses: joelwmale/webhook-action@master
+      with:
+        url: ${{ secrets.WEBHOOK_URL }}
+        headers: '{"X-Github-Raw-Secret": "${{ secrets.WEBHOOK_SECRET }}", "X-Github-Event": "build-failure"}'
+        body: '{ "github":${{ toJSON(github) }},"run_url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" }'
