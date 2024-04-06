@@ -8,15 +8,15 @@ KKP kkp;
 
 void OpenKKP()
 {
-  TCHAR dir[1024];
-  if (!GetCurrentDirectory(1024, dir))
-    memset(dir, 0, sizeof(TCHAR) * 1024);
+  char dir[1024];
+  if (!GetCurrentDirectoryA(1024, dir))
+    memset(dir, 0, sizeof(char) * 1024);
 
-  TCHAR Filestring[256];
+  char Filestring[256];
 
-  OPENFILENAME opf;
+  OPENFILENAMEA opf;
   opf.hwndOwner = 0;
-  opf.lpstrFilter = _T("KKrunchy pack info files\0*.kkp\0\0");
+  opf.lpstrFilter = "KKrunchy pack info files\0*.kkp\0\0";
   opf.lpstrCustomFilter = 0;
   opf.nMaxCustFilter = 0L;
   opf.nFilterIndex = 1L;
@@ -25,11 +25,11 @@ void OpenKKP()
   opf.nMaxFile = 256;
   opf.lpstrFileTitle = 0;
   opf.nMaxFileTitle = 50;
-  opf.lpstrInitialDir = _T("Data");
-  opf.lpstrTitle = _T("Open KKP");
+  opf.lpstrInitialDir = "Data";
+  opf.lpstrTitle = "Open KKP";
   opf.nFileOffset = 0;
   opf.nFileExtension = 0;
-  opf.lpstrDefExt = _T("kkp");
+  opf.lpstrDefExt = "kkp";
   opf.lpfnHook = NULL;
   opf.lCustData = 0;
   opf.Flags = (OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NONETWORKBUTTON) & ~OFN_ALLOWMULTISELECT;
@@ -40,26 +40,26 @@ void OpenKKP()
   opf.dwReserved = 0;
   opf.FlagsEx = 0;
 
-  if (GetOpenFileName(&opf))
+  if (GetOpenFileNameA(&opf))
   {
-    SetCurrentDirectory(dir);
+    SetCurrentDirectoryA(dir);
     kkp.Load(std::string(opf.lpstrFile));
   }
 
-  SetCurrentDirectory(dir);
+  SetCurrentDirectoryA(dir);
 }
 
 void OpenSYM()
 {
-  TCHAR dir[1024];
-  if (!GetCurrentDirectory(1024, dir))
-    memset(dir, 0, sizeof(TCHAR) * 1024);
+  char dir[1024];
+  if (!GetCurrentDirectoryA(1024, dir))
+    memset(dir, 0, sizeof(char) * 1024);
 
-  TCHAR Filestring[256];
+  char Filestring[256];
 
-  OPENFILENAME opf;
+  OPENFILENAMEA opf;
   opf.hwndOwner = 0;
-  opf.lpstrFilter = _T("Symbol map files\0*.sym\0\0");
+  opf.lpstrFilter = "Symbol map files\0*.sym\0\0";
   opf.lpstrCustomFilter = 0;
   opf.nMaxCustFilter = 0L;
   opf.nFilterIndex = 1L;
@@ -68,11 +68,11 @@ void OpenSYM()
   opf.nMaxFile = 256;
   opf.lpstrFileTitle = 0;
   opf.nMaxFileTitle = 50;
-  opf.lpstrInitialDir = _T("Data");
-  opf.lpstrTitle = _T("Open SYM");
+  opf.lpstrInitialDir = "Data";
+  opf.lpstrTitle = "Open SYM";
   opf.nFileOffset = 0;
   opf.nFileExtension = 0;
-  opf.lpstrDefExt = _T("sym");
+  opf.lpstrDefExt = "sym";
   opf.lpfnHook = NULL;
   opf.lCustData = 0;
   opf.Flags = (OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NONETWORKBUTTON) & ~OFN_ALLOWMULTISELECT;
@@ -83,13 +83,13 @@ void OpenSYM()
   opf.dwReserved = 0;
   opf.FlagsEx = 0;
 
-  if (GetOpenFileName(&opf))
+  if (GetOpenFileNameA(&opf))
   {
-    SetCurrentDirectory(dir);
+    SetCurrentDirectoryA(dir);
     kkp.LoadSym(std::string(opf.lpstrFile));
   }
 
-  SetCurrentDirectory(dir);
+  SetCurrentDirectoryA(dir);
 }
 
 std::string ReadASCIIZ(FILE* f)
