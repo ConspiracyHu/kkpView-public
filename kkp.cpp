@@ -421,11 +421,6 @@ void KKP::LoadSym(const std::string& fileName)
     {
       unsigned short symSymbol;
 
-      if (x - symbolStart == 3925)
-      {
-        int z = 0;
-      }
-
       if (!fread_s(&symSymbol, 2, 2, 1, reader))
         goto closeFile;
 
