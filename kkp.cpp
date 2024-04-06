@@ -404,7 +404,7 @@ void KKP::LoadSym(const std::string& fileName)
 
     int maxSymbolID = 0;
     for (auto& symbol : kkp.sortableSymbols)
-      maxSymbolID = max(maxSymbolID, symbol.originalSymbolID) + 1;
+      maxSymbolID = max(maxSymbolID, symbol.originalSymbolID);
 
     for (int x = 0; x < symbolCount; x++)
     {
@@ -413,7 +413,7 @@ void KKP::LoadSym(const std::string& fileName)
       symbol.isCode = false;
       symbol.fileID = -1;
       symbol.sourcePos = -1;
-      symbol.originalSymbolID = x + maxSymbolID;
+      symbol.originalSymbolID = x + maxSymbolID + 1;
       newSymbols.emplace_back(symbol);
     }
 
