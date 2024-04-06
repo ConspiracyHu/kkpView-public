@@ -507,7 +507,7 @@ void DrawCodeView()
     if (openedSource >= 0)
         source = kkp.files[openedSource].name;
 
-    if (ImGui::Button(source.data(), ImVec2(ImGui::CalcTextSize(source.data()).x,ImGui::GetTextLineHeightWithSpacing())))
+    if (ImGui::SmallButton(source.data()))
         ImGui::OpenPopup("SourceCodeSelector");
 
     if (ImGui::BeginPopup("SourceCodeSelector"))
