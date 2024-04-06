@@ -636,6 +636,20 @@ void DrawSymbolList()
         ImGuiListClipper clipper;
         clipper.Begin((int)kkp.sortableSymbols.size());
 
+        if (symbolSelectionChanged)
+        {
+          for (int x = 0; x < kkp.sortableSymbols.size(); x++)
+          {
+            if (kkp.sortableSymbols[x].originalSymbolID == newlySelectedSymbolID)
+            {
+              ImGui::SetScrollY(ImGui::GetTextLineHeightWithSpacing() * x - ImGui::GetWindowHeight() / 2);
+              break;
+            }
+          }
+          symbolSelectionChanged = false;
+        }
+
+
         while (clipper.Step())
         {
             for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; row++)
@@ -652,12 +666,6 @@ void DrawSymbolList()
                 ImGuiSelectableFlags selectableFlags = ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap;
                 if (ImGui::Selectable(symbol.name.data(), symbol.selected, selectableFlags))
                 {
-                }
-
-                if (symbolSelectionChanged && symbol.originalSymbolID == newlySelectedSymbolID)
-                {
-                    ImGui::SetScrollHereY();
-                    symbolSelectionChanged = false;
                 }
 
                 if (ImGui::IsItemFocused() && !symbol.selected)
