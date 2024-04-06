@@ -1,0 +1,21 @@
+name: build-on-push
+on: [push]
+jobs:
+  build_kkpviewer:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        path: KKPViewer
+        submodules: recursive
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+    - name: Build Debug|Win32
+      run: msbuild .\KKPViewer\KKPViewer.sln /p:Configuration=Debug /p:Platform=Win32
+    - name: Build Release|Win32
+      run: msbuild .\KKPViewer\KKPViewer.sln /p:Configuration=Release /p:Platform=Win32
+    - name: Build Debug|x64
+      run: msbuild .\KKPViewer\KKPViewer.sln /p:Configuration=Debug /p:Platform=x64
+    - name: Build Release|x64
+      run: msbuild .\KKPViewer\KKPViewer.sln /p:Configuration=Release /p:Platform=x64
