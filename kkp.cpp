@@ -129,6 +129,7 @@ void KKP::AddSymbol( const KKPSymbol& symbol )
   {
     currNode->cumulativePackedSize += symbol.packedSize;
     currNode->cumulativeUnpackedSize += symbol.unpackedSize;
+    currNode->sourcePos = min( currNode->sourcePos, symbol.sourcePos );
 
     bool found = false;
     for ( auto& c : currNode->children )
@@ -159,45 +160,43 @@ void SortNode( KKP::KKPSymbol& symbol, int sortColumn, bool descending )
 {
   switch ( sortColumn )
   {
-  case 0:
+  case 0: // name
     std::sort( symbol.children.begin(), symbol.children.begin() + symbol.children.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
                {
                  return descending ? a.name < b.name : a.name > b.name;
                } );
     break;
-  case 1:
+  case 1: // offset
     std::sort( symbol.children.begin(), symbol.children.begin() + symbol.children.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
                {
                  return descending ? a.sourcePos < b.sourcePos : a.sourcePos > b.sourcePos;
                } );
     break;
-  case 2:
+  case 2: // unpacked
     std::sort( symbol.children.begin(), symbol.children.begin() + symbol.children.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
                {
-                 return descending ? a.unpackedSize < b.unpackedSize : a.unpackedSize > b.unpackedSize;
+                 return descending ? a.cumulativeUnpackedSize < b.cumulativeUnpackedSize : a.cumulativeUnpackedSize > b.cumulativeUnpackedSize;
                } );
     break;
-  case 3:
-    std::sort( symbol.children.begin(), symbol.children.begin() + symbol.children.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
-               {
-                 return descending ? a.packedSize < b.packedSize : a.packedSize > b.packedSize;
-               } );
-    break;
-  case 4:
+  case 3: // packed
     std::sort( symbol.children.begin(), symbol.children.begin() + symbol.children.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
                {
                  return descending ? a.cumulativePackedSize < b.cumulativePackedSize : a.cumulativePackedSize > b.cumulativePackedSize;
                } );
     break;
-  case 5:
+  case 4: // ratio
     std::sort( symbol.children.begin(), symbol.children.begin() + symbol.children.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
                {
                  double ratioA = 0;
                  if ( a.cumulativeUnpackedSize )
                    ratioA = a.cumulativePackedSize / a.cumulativeUnpackedSize;
+                 if ( isnan( ratioA ) || isinf( ratioA ) )
+                   ratioA = 0;
                  double ratioB = 0;
                  if ( b.cumulativeUnpackedSize )
                    ratioB = b.cumulativePackedSize / b.cumulativeUnpackedSize;
+                 if ( isnan( ratioB ) || isinf( ratioB ) )
+                   ratioB = 0;
                  return descending ? ratioA < ratioB : ratioA > ratioB;
                } );
     break;
@@ -209,49 +208,47 @@ void SortNode( KKP::KKPSymbol& symbol, int sortColumn, bool descending )
 
 void KKP::Sort( int sortColumn, bool descending )
 {
-  //SortNode(root, sortColumn, descending);
+  SortNode(root, sortColumn, descending);
 
   switch ( sortColumn )
   {
-  case 0:
+  case 0: // name
     std::sort( sortableSymbols.begin(), sortableSymbols.begin() + sortableSymbols.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
                {
                  return descending ? a.name < b.name : a.name > b.name;
                } );
     break;
-  case 1:
+  case 1: // offset
     std::sort( sortableSymbols.begin(), sortableSymbols.begin() + sortableSymbols.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
                {
                  return descending ? a.sourcePos < b.sourcePos : a.sourcePos > b.sourcePos;
                } );
     break;
-  case 2:
+  case 2: // unpacked
     std::sort( sortableSymbols.begin(), sortableSymbols.begin() + sortableSymbols.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
                {
-                 return descending ? a.unpackedSize < b.unpackedSize : a.unpackedSize > b.unpackedSize;
+                 return descending ? a.cumulativeUnpackedSize < b.cumulativeUnpackedSize : a.cumulativeUnpackedSize > b.cumulativeUnpackedSize;
                } );
     break;
-  case 3:
-    std::sort( sortableSymbols.begin(), sortableSymbols.begin() + sortableSymbols.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
-               {
-                 return descending ? a.packedSize < b.packedSize : a.packedSize > b.packedSize;
-               } );
-    break;
-  case 4:
+  case 3: // packed
     std::sort( sortableSymbols.begin(), sortableSymbols.begin() + sortableSymbols.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
                {
                  return descending ? a.cumulativePackedSize < b.cumulativePackedSize : a.cumulativePackedSize > b.cumulativePackedSize;
                } );
     break;
-  case 5:
+  case 4: // ratio
     std::sort( sortableSymbols.begin(), sortableSymbols.begin() + sortableSymbols.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
                {
                  double ratioA = 0;
                  if ( a.cumulativeUnpackedSize )
                    ratioA = a.cumulativePackedSize / a.cumulativeUnpackedSize;
+                 if ( isnan( ratioA ) || isinf( ratioA ) )
+                   ratioA = 0;
                  double ratioB = 0;
                  if ( b.cumulativeUnpackedSize )
                    ratioB = b.cumulativePackedSize / b.cumulativeUnpackedSize;
+                 if ( isnan( ratioB ) || isinf( ratioB ) )
+                   ratioB = 0;
                  return descending ? ratioA < ratioB : ratioA > ratioB;
                } );
     break;

@@ -22,7 +22,7 @@ public:
     double packedSize = 0;
     bool isCode = false;
     int fileID = 0;
-    int sourcePos = 0;
+    unsigned int sourcePos = 0xffffffff;
     double cumulativePackedSize = 0;
     int cumulativeUnpackedSize = 0;
     int originalSymbolID = -1;

@@ -665,10 +665,154 @@ void DrawCodeView()
   sourceChanged = false;
 }
 
-const int numberOfColumns = 6;
+const int numberOfColumns = 5;
+static bool scopes = false;
+static bool foldersOnTop = true;
+
+void SetSymbolColumns( const KKP::KKPSymbol& symbol )
+{
+  double ratio = symbol.cumulativePackedSize / symbol.cumulativeUnpackedSize;
+  if ( isnan( ratio ) || isinf( ratio ) )
+    ratio = 0;
+
+  ImGui::TableSetColumnIndex( 1 );
+  ImGui::Text( "%d", symbol.sourcePos );
+
+  ImGui::TableSetColumnIndex( 2 );
+  ImGui::Text( "%d", symbol.cumulativeUnpackedSize );
+
+  ImGui::TableSetColumnIndex( 3 );
+  ImGui::Text( "%g", symbol.cumulativePackedSize );
+
+  ImGui::TableSetColumnIndex( 4 );
+  ImGui::Text( "%g", ratio );
+}
+
+void RecursiveClearSymbolSelected( KKP::KKPSymbol& symbol )
+{
+  symbol.selected = false;
+  for ( auto& child : symbol.children )
+    RecursiveClearSymbolSelected( child );
+}
+
+void DoSymbolSelection( KKP::KKPSymbol& symbol )
+{
+  if ( ImGui::IsItemFocused() && !symbol.selected )
+  {
+    RecursiveClearSymbolSelected( kkp.root );
+    for ( auto& sym : kkp.sortableSymbols )
+      sym.selected = false;
+    symbol.selected = true;
+    OpenSourceFile( symbol.fileID );
+    auto& byte = kkp.bytes[ symbol.sourcePos ];
+    selectedSourceLine = byte.line;
+    sourceChanged = true;
+
+    hexViewPositionChanged = true;
+    targetHexViewPosition = symbol.sourcePos;
+
+    hexHighlightMode = HexHighlightMode::Symbol;
+
+    if ( symbol.unpackedSize )
+      hexHighlightSymbol = byte.symbol;
+    else
+      hexHighlightSymbol = -2;
+  }
+}
+
+void AddNonFolder( KKP::KKPSymbol& symbol, const ImVec2& tableTopLeft, int& rowIndex, const ImVec2& windowSize, const float rowHeight, const float scroll )
+{
+  ImGui::TableNextRow();
+
+  float rowTop = rowIndex * rowHeight;
+  float rowBottom = rowTop + rowHeight;
+  bool rowVisible = ( rowTop < windowSize.y + scroll ) && ( rowBottom > scroll );
+  rowIndex++;
+
+  if ( rowVisible )
+  {
+    double ratio = symbol.cumulativePackedSize / symbol.cumulativeUnpackedSize;
+    ImGui::PushStyleColor( ImGuiCol_Text, GetRatioColor( ratio ) );
+    ImGui::TableSetColumnIndex( 0 );
+    ImGui::Selectable( symbol.name.data(), symbol.selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap );
+    DoSymbolSelection( symbol );
+    SetSymbolColumns( symbol );
+    ImGui::PopStyleColor();
+  }
+  else
+  {
+    ImGui::TableSetColumnIndex( 0 );
+    ImGui::Text( "" );
+  }
+}
+
+void AddSymbolRecursive( KKP::KKPSymbol& node, const ImVec2& tableTopLeft, int& rowIndex, const ImVec2& windowSize, const float rowHeight, const float scroll )
+{
+  // folders
+  for ( auto& child : node.children )
+  {
+    if ( !child.children.size() )
+    {
+      if (!foldersOnTop )
+        AddNonFolder( child, tableTopLeft, rowIndex, windowSize, rowHeight, scroll );
+      continue;
+    }
+
+    ImGui::TableNextRow();
+
+    float rowTop = rowIndex * rowHeight;
+    float rowBottom = rowTop + rowHeight;
+    bool rowVisible = ( rowTop < windowSize.y + scroll ) && ( rowBottom > scroll );
+    rowIndex++;
+
+    ImVec2 rowStart = ImGui::GetCursorPos();
+
+    if ( rowVisible )
+    {
+      double ratio = child.cumulativePackedSize / child.cumulativeUnpackedSize;
+      ImGui::PushStyleColor( ImGuiCol_Text, GetRatioColor( ratio ) );
+    }
+
+    ImGui::TableSetColumnIndex( 0 );
+    bool folderOpen = ImGui::TreeNodeEx( child.name.data(), ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen | ( ImGuiTreeNodeFlags_Selected * child.selected ) );
+
+    DoSymbolSelection( child );
+
+    if ( rowVisible )
+      SetSymbolColumns( child );
+
+    if ( folderOpen )
+    {
+      AddSymbolRecursive( child, tableTopLeft, rowIndex, windowSize, rowHeight, scroll );
+      ImGui::TreePop();
+    }
+
+    if ( rowVisible )
+      ImGui::PopStyleColor();
+  }
+
+  if ( foldersOnTop )
+  {
+    // non-folders
+    for ( auto& child : node.children )
+    {
+      if ( child.children.size() )
+        continue;
+
+      AddNonFolder( child, tableTopLeft, rowIndex, windowSize, rowHeight, scroll );
+    }
+  }
+}
 
 void DrawSymbolList()
 {
+  ImGui::Checkbox( "Enable namespace scopes", &scopes );
+  if ( scopes )
+  {
+    ImGui::SameLine();
+    ImGui::Checkbox( "Folders on top", &foldersOnTop );
+  }
+
   if ( ImGui::BeginTable( "myTable", numberOfColumns, ImGuiTableFlags_RowBg | ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY ) )
   {
     ImGui::TableSetupScrollFreeze( 0, 1 );
@@ -676,7 +820,6 @@ void DrawSymbolList()
     ImGui::TableSetupColumn( "Offset", ImGuiTableColumnFlags_WidthStretch );
     ImGui::TableSetupColumn( "Unpacked Size", ImGuiTableColumnFlags_WidthStretch );
     ImGui::TableSetupColumn( "Packed Size", ImGuiTableColumnFlags_WidthStretch );
-    ImGui::TableSetupColumn( "Packed Cumulative Size", ImGuiTableColumnFlags_WidthStretch );
     ImGui::TableSetupColumn( "Pack Ratio", ImGuiTableColumnFlags_WidthStretch );
 
     ImGuiTableSortSpecs* sortSpecs = ImGui::TableGetSortSpecs();
@@ -710,74 +853,43 @@ void DrawSymbolList()
     }
 
 
-    while ( clipper.Step() )
+    if ( !scopes )
     {
-      for ( int row = clipper.DisplayStart; row < clipper.DisplayEnd; row++ )
+      while ( clipper.Step() )
       {
-        auto& symbol = kkp.sortableSymbols[ row ];
-
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex( 0 );
-
-        double ratio = symbol.cumulativePackedSize / symbol.cumulativeUnpackedSize;
-
-        ImGui::PushStyleColor( ImGuiCol_Text, GetRatioColor( ratio ) );
-
-        ImGuiSelectableFlags selectableFlags = ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap;
-        if ( ImGui::Selectable( symbol.name.data(), symbol.selected, selectableFlags ) )
+        for ( int row = clipper.DisplayStart; row < clipper.DisplayEnd; row++ )
         {
+          auto& symbol = kkp.sortableSymbols[ row ];
+
+          ImGui::TableNextRow();
+          ImGui::TableSetColumnIndex( 0 );
+
+          double ratio = symbol.cumulativePackedSize / symbol.cumulativeUnpackedSize;
+
+          ImGui::PushStyleColor( ImGuiCol_Text, GetRatioColor( ratio ) );
+
+          ImGui::Selectable( symbol.name.data(), symbol.selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap );
+          DoSymbolSelection( symbol );
+
+          SetSymbolColumns( symbol );
+
+          ImGui::PopStyleColor();
         }
-
-        if ( ImGui::IsItemFocused() && !symbol.selected )
-        {
-          for ( auto& sym : kkp.sortableSymbols )
-            sym.selected = false;
-          symbol.selected = true;
-          OpenSourceFile( symbol.fileID );
-          auto& byte = kkp.bytes[ symbol.sourcePos ];
-          selectedSourceLine = byte.line;
-          sourceChanged = true;
-
-          hexViewPositionChanged = true;
-          targetHexViewPosition = symbol.sourcePos;
-
-          hexHighlightMode = HexHighlightMode::Symbol;
-
-          if ( symbol.unpackedSize )
-            hexHighlightSymbol = byte.symbol;
-          else
-            hexHighlightSymbol = -2;
-        }
-
-        if ( !symbol.children.size() )
-        {
-          ImGui::TableSetColumnIndex( 1 );
-          ImGui::Text( "%d", symbol.sourcePos );
-        }
-
-        if ( !symbol.children.size() )
-        {
-          ImGui::TableSetColumnIndex( 2 );
-          ImGui::Text( "%d", symbol.unpackedSize );
-        }
-
-        if ( !symbol.children.size() )
-        {
-          ImGui::TableSetColumnIndex( 3 );
-          ImGui::Text( "%g", symbol.packedSize );
-        }
-
-        ImGui::TableSetColumnIndex( 4 );
-        ImGui::Text( "%g", symbol.cumulativePackedSize );
-
-        if ( symbol.cumulativeUnpackedSize )
-        {
-          ImGui::TableSetColumnIndex( 5 );
-          ImGui::Text( "%g", ratio );
-        }
-
-        ImGui::PopStyleColor();
       }
+    }
+    else
+    {
+      ImGui::PushStyleVar( ImGuiStyleVar_FramePadding, ImVec2( 0, 0 ) );
+
+      auto pos = ImGui::GetCursorScreenPos();
+      ImVec2 windowSize = ImGui::GetWindowSize();
+      auto rowHeight = ImGui::GetTextLineHeightWithSpacing();
+      float scroll = ImGui::GetScrollY();
+
+      int index = 0;
+      AddSymbolRecursive( kkp.root, pos, index, windowSize, rowHeight, scroll );
+
+      ImGui::PopStyleVar();
     }
 
     ImGui::EndTable();
