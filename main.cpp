@@ -820,7 +820,6 @@ INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
   int rtWidth = 0;
   int rtHeight = 0;
 
-  //ImGui::PushStyleVar( ImGuiStyleVar_ChildBorderSize, 5.0f );
   ImGui::PushStyleVar( ImGuiStyleVar_WindowPadding, ImVec2( 0, 0 ) );
 
   bool done = false;
@@ -894,7 +893,7 @@ INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
       ImGui::EndChild();
 
       // Lower part of the left area
-      ImGui::BeginChild( "Code View", ImVec2( -1, -1 ), ImGuiChildFlags_Border );
+      ImGui::BeginChild( "Code View", ImVec2( -1, -1 ), ImGuiChildFlags_None );
       DrawCodeView();
       ImGui::EndChild();
     }
@@ -902,7 +901,7 @@ INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
     ImGui::SameLine();
 
-    ImGui::BeginChild( "Symbol List", ImVec2( -1, -1 ), ImGuiChildFlags_Border );
+    ImGui::BeginChild( "Symbol List", ImVec2( -1, -1 ), ImGuiChildFlags_None );
     DrawSymbolList();
     ImGui::EndChild();
 
