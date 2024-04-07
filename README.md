@@ -1,5 +1,7 @@
 Universal compression ratio analyzer using the .kkp and .sym formats introduced in [rekkrunchy-with-analytics](https://github.com/ConspiracyHu/rekkrunchy-with-analytics).
 
+![image](https://github.com/ConspiracyHu/kkpView-public/assets/1076235/e84ba62f-6bec-4721-8fca-1e2c636a7734)
+
 The purpose of this tool is to visualize the contents of a compressed executable using a .kkp file and show the packing ratio at a per-byte resolution. The kkp format supports per byte symbol and source code information. The additional sym format can be used to map the contents of individual symbols inside the executable (for embedded resources).
 
 File format descriptions follow.
