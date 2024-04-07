@@ -820,7 +820,7 @@ INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
   int rtWidth = 0;
   int rtHeight = 0;
 
-  ImGui::PushStyleVar( ImGuiStyleVar_ChildBorderSize, 0.0f );
+  //ImGui::PushStyleVar( ImGuiStyleVar_ChildBorderSize, 5.0f );
   ImGui::PushStyleVar( ImGuiStyleVar_WindowPadding, ImVec2( 0, 0 ) );
 
   bool done = false;
@@ -870,9 +870,6 @@ INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
     ImGui::EndMainMenuBar();
 
-    static float hSplitterPos = 0.5f;
-    static float vSplitterPos = 0.5f;
-
     static float f = 0.0f;
     static int counter = 0;
 
@@ -880,73 +877,32 @@ INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     ImGui::SetNextWindowPos( ImVec2( 0, menuSize.y ) );
     ImGui::SetNextWindowSize( ImVec2( (float)rtWidth, (float)( rtHeight - menuSize.y ) ) );
 
-    ImGui::Begin( "kkpView", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar );                          // Create a window called "Hello, world!" and append into it.
+    ImGui::Begin( "kkpView", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar );
 
     ImVec2 windowSize = ImGui::GetContentRegionAvail();
-    float verticalSplitPixelPos = windowSize.x * vSplitterPos;
-    float horizontalSplitPixelPos = ( windowSize.y * hSplitterPos );
 
-    float splitterThickness = 8.0f;
+    const float hSplitterPos = 0.5f;
+    const float vSplitterPos = 0.5f;
+    const float verticalSplitPixelPos = windowSize.x * vSplitterPos;
+    const float horizontalSplitPixelPos = ( windowSize.y * hSplitterPos );
 
-    ImGui::BeginChild( "left side", ImVec2( verticalSplitPixelPos, -1 ), true );
+    ImGui::BeginChild( "left side", ImVec2( verticalSplitPixelPos, -1 ), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX );
     {
-        // Upper part of the left area
-      ImGui::BeginChild( "Hex View", ImVec2( -1, horizontalSplitPixelPos ), true );
-
+      // Upper part of the left area
+      ImGui::BeginChild( "Hex View", ImVec2( -1, horizontalSplitPixelPos ), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY );
       DrawHexView();
-
       ImGui::EndChild();
 
-      ImVec2 splitterPos = ImGui::GetCursorScreenPos();
-
-      bool isHovering = mousePos.x >= splitterPos.x && mousePos.x < splitterPos.x + ImGui::GetContentRegionAvail().x &&
-        mousePos.y >= splitterPos.y && mousePos.y < splitterPos.y + splitterThickness;
-
-      if ( isHovering || ImGui::IsItemActive() )
-        ImGui::SetMouseCursor( ImGuiMouseCursor_ResizeNS );
-
-    // Horizontal Splitter
-      ImGui::GetWindowDrawList()->AddRectFilled( ImVec2( splitterPos.x, splitterPos.y + splitterThickness / 2 ), ImVec2( splitterPos.x + windowSize.x, splitterPos.y + splitterThickness / 2 + 1 ), isHovering ? 0xff985317 : 0xff403b3b );
-
-      ImGui::InvisibleButton( "hsplitter", ImVec2( -1, splitterThickness ) );
-      if ( ImGui::IsItemActive() )
-      {
-        hSplitterPos += ImGui::GetIO().MouseDelta.y / windowSize.y;
-        hSplitterPos = min( max( hSplitterPos, 0.1f ), 0.9f );
-      }
-
       // Lower part of the left area
-      ImGui::BeginChild( "Code View", ImVec2( -1, -1 ), true );
-
+      ImGui::BeginChild( "Code View", ImVec2( -1, -1 ), ImGuiChildFlags_Border );
       DrawCodeView();
-
       ImGui::EndChild();
     }
     ImGui::EndChild();
 
     ImGui::SameLine();
 
-    ImVec2 splitterPos = ImGui::GetCursorScreenPos();
-
-    bool isHovering = mousePos.x >= splitterPos.x && mousePos.x < splitterPos.x + splitterThickness &&
-      mousePos.y >= splitterPos.y && mousePos.y < splitterPos.y + ImGui::GetContentRegionAvail().y;
-
-    if ( isHovering || ImGui::IsItemActive() )
-      ImGui::SetMouseCursor( ImGuiMouseCursor_ResizeEW );
-
-  // Vertical Splitter
-    ImGui::GetWindowDrawList()->AddRectFilled( ImVec2( splitterPos.x + splitterThickness / 2, splitterPos.y ), ImVec2( splitterPos.x + splitterThickness / 2 + 1, splitterPos.y + windowSize.y ), isHovering ? 0xff985317 : 0xff403b3b );
-
-    ImGui::InvisibleButton( "vsplitter", ImVec2( splitterThickness, -1 ) );
-    if ( ImGui::IsItemActive() )
-    {
-      vSplitterPos += ImGui::GetIO().MouseDelta.x / windowSize.x;
-      vSplitterPos = min( max( vSplitterPos, 0.1f ), 0.9f );
-    }
-
-    ImGui::SameLine();
-
-    ImGui::BeginChild( "Symbol List", ImVec2( -1, -1 ), true );
+    ImGui::BeginChild( "Symbol List", ImVec2( -1, -1 ), ImGuiChildFlags_Border );
     DrawSymbolList();
     ImGui::EndChild();
 
