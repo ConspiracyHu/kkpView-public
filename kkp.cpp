@@ -8,11 +8,11 @@ KKP kkp;
 
 void OpenKKP()
 {
-  char dir[1024];
-  if (!GetCurrentDirectoryA(1024, dir))
-    memset(dir, 0, sizeof(char) * 1024);
+  char dir[ 1024 ];
+  if ( !GetCurrentDirectoryA( 1024, dir ) )
+    memset( dir, 0, sizeof( char ) * 1024 );
 
-  char Filestring[256];
+  char Filestring[ 256 ];
 
   OPENFILENAMEA opf;
   opf.hwndOwner = 0;
@@ -21,7 +21,7 @@ void OpenKKP()
   opf.nMaxCustFilter = 0L;
   opf.nFilterIndex = 1L;
   opf.lpstrFile = Filestring;
-  opf.lpstrFile[0] = '\0';
+  opf.lpstrFile[ 0 ] = '\0';
   opf.nMaxFile = 256;
   opf.lpstrFileTitle = 0;
   opf.nMaxFileTitle = 50;
@@ -32,30 +32,30 @@ void OpenKKP()
   opf.lpstrDefExt = "kkp";
   opf.lpfnHook = NULL;
   opf.lCustData = 0;
-  opf.Flags = (OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NONETWORKBUTTON) & ~OFN_ALLOWMULTISELECT;
-  opf.lStructSize = sizeof(OPENFILENAME);
+  opf.Flags = ( OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NONETWORKBUTTON ) & ~OFN_ALLOWMULTISELECT;
+  opf.lStructSize = sizeof( OPENFILENAME );
 
-  opf.hInstance = GetModuleHandle(0);
+  opf.hInstance = GetModuleHandle( 0 );
   opf.pvReserved = NULL;
   opf.dwReserved = 0;
   opf.FlagsEx = 0;
 
-  if (GetOpenFileNameA(&opf))
+  if ( GetOpenFileNameA( &opf ) )
   {
-    SetCurrentDirectoryA(dir);
-    kkp.Load(std::string(opf.lpstrFile));
+    SetCurrentDirectoryA( dir );
+    kkp.Load( std::string( opf.lpstrFile ) );
   }
 
-  SetCurrentDirectoryA(dir);
+  SetCurrentDirectoryA( dir );
 }
 
 void OpenSYM()
 {
-  char dir[1024];
-  if (!GetCurrentDirectoryA(1024, dir))
-    memset(dir, 0, sizeof(char) * 1024);
+  char dir[ 1024 ];
+  if ( !GetCurrentDirectoryA( 1024, dir ) )
+    memset( dir, 0, sizeof( char ) * 1024 );
 
-  char Filestring[256];
+  char Filestring[ 256 ];
 
   OPENFILENAMEA opf;
   opf.hwndOwner = 0;
@@ -64,7 +64,7 @@ void OpenSYM()
   opf.nMaxCustFilter = 0L;
   opf.nFilterIndex = 1L;
   opf.lpstrFile = Filestring;
-  opf.lpstrFile[0] = '\0';
+  opf.lpstrFile[ 0 ] = '\0';
   opf.nMaxFile = 256;
   opf.lpstrFileTitle = 0;
   opf.nMaxFileTitle = 50;
@@ -75,65 +75,65 @@ void OpenSYM()
   opf.lpstrDefExt = "sym";
   opf.lpfnHook = NULL;
   opf.lCustData = 0;
-  opf.Flags = (OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NONETWORKBUTTON) & ~OFN_ALLOWMULTISELECT;
-  opf.lStructSize = sizeof(OPENFILENAME);
+  opf.Flags = ( OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NONETWORKBUTTON ) & ~OFN_ALLOWMULTISELECT;
+  opf.lStructSize = sizeof( OPENFILENAME );
 
-  opf.hInstance = GetModuleHandle(0);
+  opf.hInstance = GetModuleHandle( 0 );
   opf.pvReserved = NULL;
   opf.dwReserved = 0;
   opf.FlagsEx = 0;
 
-  if (GetOpenFileNameA(&opf))
+  if ( GetOpenFileNameA( &opf ) )
   {
-    SetCurrentDirectoryA(dir);
-    kkp.LoadSym(std::string(opf.lpstrFile));
+    SetCurrentDirectoryA( dir );
+    kkp.LoadSym( std::string( opf.lpstrFile ) );
   }
 
-  SetCurrentDirectoryA(dir);
+  SetCurrentDirectoryA( dir );
 }
 
-std::string ReadASCIIZ(FILE* f)
+std::string ReadASCIIZ( FILE* f )
 {
   std::string result;
 
   int ch;
-  while ((ch = fgetc(f)) != EOF && ch != '\0')
-    result.push_back((char)ch);
+  while ( ( ch = fgetc( f ) ) != EOF && ch != '\0' )
+    result.push_back( (char)ch );
 
   return result;
 }
 
-std::vector<std::string> Explode(std::string s, const std::string& delim)
+std::vector<std::string> Explode( std::string s, const std::string& delim )
 {
   std::vector<std::string> result;
   size_t pos = 0;
 
-  while ((pos = s.find(delim)) != std::string::npos)
+  while ( ( pos = s.find( delim ) ) != std::string::npos )
   {
-    result.emplace_back(s.substr(0, pos));
-    s.erase(0, pos + delim.length());
+    result.emplace_back( s.substr( 0, pos ) );
+    s.erase( 0, pos + delim.length() );
   }
 
-  result.emplace_back(s);
+  result.emplace_back( s );
   return result;
 }
 
 
-void KKP::AddSymbol(const KKPSymbol& symbol)
+void KKP::AddSymbol( const KKPSymbol& symbol )
 {
-  auto nameSpaces = Explode(symbol.name, "::");
+  auto nameSpaces = Explode( symbol.name, "::" );
 
   auto* currNode = &root;
 
-  for (auto& nameSpace : nameSpaces)
+  for ( auto& nameSpace : nameSpaces )
   {
     currNode->cumulativePackedSize += symbol.packedSize;
     currNode->cumulativeUnpackedSize += symbol.unpackedSize;
 
     bool found = false;
-    for (auto& c : currNode->children)
+    for ( auto& c : currNode->children )
     {
-      if (c.name == nameSpace)
+      if ( c.name == nameSpace )
       {
         found = true;
         currNode = &c;
@@ -141,11 +141,11 @@ void KKP::AddSymbol(const KKPSymbol& symbol)
       }
     }
 
-    if (!found)
+    if ( !found )
     {
       KKPSymbol newSymbol;
       newSymbol.name = nameSpace;
-      currNode->children.emplace_back(newSymbol);
+      currNode->children.emplace_back( newSymbol );
       currNode = &currNode->children.back();
     }
   }
@@ -155,211 +155,211 @@ void KKP::AddSymbol(const KKPSymbol& symbol)
   currNode->name = strippedName;
 }
 
-void SortNode(KKP::KKPSymbol& symbol, int sortColumn, bool descending)
+void SortNode( KKP::KKPSymbol& symbol, int sortColumn, bool descending )
 {
-  switch (sortColumn)
+  switch ( sortColumn )
   {
   case 0:
-    std::sort(symbol.children.begin(), symbol.children.begin() + symbol.children.size(), [descending](const KKP::KKPSymbol& a, const KKP::KKPSymbol& b) -> bool
-      {
-        return descending ? a.name < b.name : a.name > b.name;
-      });
+    std::sort( symbol.children.begin(), symbol.children.begin() + symbol.children.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
+               {
+                 return descending ? a.name < b.name : a.name > b.name;
+               } );
     break;
   case 1:
-    std::sort(symbol.children.begin(), symbol.children.begin() + symbol.children.size(), [descending](const KKP::KKPSymbol& a, const KKP::KKPSymbol& b) -> bool
-      {
-        return descending ? a.sourcePos < b.sourcePos : a.sourcePos > b.sourcePos;
-      });
+    std::sort( symbol.children.begin(), symbol.children.begin() + symbol.children.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
+               {
+                 return descending ? a.sourcePos < b.sourcePos : a.sourcePos > b.sourcePos;
+               } );
     break;
   case 2:
-    std::sort(symbol.children.begin(), symbol.children.begin() + symbol.children.size(), [descending](const KKP::KKPSymbol& a, const KKP::KKPSymbol& b) -> bool
-      {
-        return descending ? a.unpackedSize < b.unpackedSize : a.unpackedSize > b.unpackedSize;
-      });
+    std::sort( symbol.children.begin(), symbol.children.begin() + symbol.children.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
+               {
+                 return descending ? a.unpackedSize < b.unpackedSize : a.unpackedSize > b.unpackedSize;
+               } );
     break;
   case 3:
-    std::sort(symbol.children.begin(), symbol.children.begin() + symbol.children.size(), [descending](const KKP::KKPSymbol& a, const KKP::KKPSymbol& b) -> bool
-      {
-        return descending ? a.packedSize < b.packedSize : a.packedSize > b.packedSize;
-      });
+    std::sort( symbol.children.begin(), symbol.children.begin() + symbol.children.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
+               {
+                 return descending ? a.packedSize < b.packedSize : a.packedSize > b.packedSize;
+               } );
     break;
   case 4:
-    std::sort(symbol.children.begin(), symbol.children.begin() + symbol.children.size(), [descending](const KKP::KKPSymbol& a, const KKP::KKPSymbol& b) -> bool
-      {
-        return descending ? a.cumulativePackedSize < b.cumulativePackedSize : a.cumulativePackedSize > b.cumulativePackedSize;
-      });
+    std::sort( symbol.children.begin(), symbol.children.begin() + symbol.children.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
+               {
+                 return descending ? a.cumulativePackedSize < b.cumulativePackedSize : a.cumulativePackedSize > b.cumulativePackedSize;
+               } );
     break;
   case 5:
-    std::sort(symbol.children.begin(), symbol.children.begin() + symbol.children.size(), [descending](const KKP::KKPSymbol& a, const KKP::KKPSymbol& b) -> bool
-      {
-        double ratioA = 0;
-        if (a.cumulativeUnpackedSize)
-          ratioA = a.cumulativePackedSize / a.cumulativeUnpackedSize;
-        double ratioB = 0;
-        if (b.cumulativeUnpackedSize)
-          ratioB = b.cumulativePackedSize / b.cumulativeUnpackedSize;
-        return descending ? ratioA < ratioB : ratioA > ratioB;
-      });
+    std::sort( symbol.children.begin(), symbol.children.begin() + symbol.children.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
+               {
+                 double ratioA = 0;
+                 if ( a.cumulativeUnpackedSize )
+                   ratioA = a.cumulativePackedSize / a.cumulativeUnpackedSize;
+                 double ratioB = 0;
+                 if ( b.cumulativeUnpackedSize )
+                   ratioB = b.cumulativePackedSize / b.cumulativeUnpackedSize;
+                 return descending ? ratioA < ratioB : ratioA > ratioB;
+               } );
     break;
   }
 
-  for (auto& child : symbol.children)
-    SortNode(child, sortColumn, descending);
+  for ( auto& child : symbol.children )
+    SortNode( child, sortColumn, descending );
 }
 
-void KKP::Sort(int sortColumn, bool descending)
+void KKP::Sort( int sortColumn, bool descending )
 {
   //SortNode(root, sortColumn, descending);
 
-  switch (sortColumn)
+  switch ( sortColumn )
   {
   case 0:
-    std::sort(sortableSymbols.begin(), sortableSymbols.begin() + sortableSymbols.size(), [descending](const KKP::KKPSymbol& a, const KKP::KKPSymbol& b) -> bool
-      {
-        return descending ? a.name < b.name : a.name > b.name;
-      });
+    std::sort( sortableSymbols.begin(), sortableSymbols.begin() + sortableSymbols.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
+               {
+                 return descending ? a.name < b.name : a.name > b.name;
+               } );
     break;
   case 1:
-    std::sort(sortableSymbols.begin(), sortableSymbols.begin() + sortableSymbols.size(), [descending](const KKP::KKPSymbol& a, const KKP::KKPSymbol& b) -> bool
-      {
-        return descending ? a.sourcePos < b.sourcePos : a.sourcePos > b.sourcePos;
-      });
+    std::sort( sortableSymbols.begin(), sortableSymbols.begin() + sortableSymbols.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
+               {
+                 return descending ? a.sourcePos < b.sourcePos : a.sourcePos > b.sourcePos;
+               } );
     break;
   case 2:
-    std::sort(sortableSymbols.begin(), sortableSymbols.begin() + sortableSymbols.size(), [descending](const KKP::KKPSymbol& a, const KKP::KKPSymbol& b) -> bool
-      {
-        return descending ? a.unpackedSize < b.unpackedSize : a.unpackedSize > b.unpackedSize;
-      });
+    std::sort( sortableSymbols.begin(), sortableSymbols.begin() + sortableSymbols.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
+               {
+                 return descending ? a.unpackedSize < b.unpackedSize : a.unpackedSize > b.unpackedSize;
+               } );
     break;
   case 3:
-    std::sort(sortableSymbols.begin(), sortableSymbols.begin() + sortableSymbols.size(), [descending](const KKP::KKPSymbol& a, const KKP::KKPSymbol& b) -> bool
-      {
-        return descending ? a.packedSize < b.packedSize : a.packedSize > b.packedSize;
-      });
+    std::sort( sortableSymbols.begin(), sortableSymbols.begin() + sortableSymbols.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
+               {
+                 return descending ? a.packedSize < b.packedSize : a.packedSize > b.packedSize;
+               } );
     break;
   case 4:
-    std::sort(sortableSymbols.begin(), sortableSymbols.begin() + sortableSymbols.size(), [descending](const KKP::KKPSymbol& a, const KKP::KKPSymbol& b) -> bool
-      {
-        return descending ? a.cumulativePackedSize < b.cumulativePackedSize : a.cumulativePackedSize > b.cumulativePackedSize;
-      });
+    std::sort( sortableSymbols.begin(), sortableSymbols.begin() + sortableSymbols.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
+               {
+                 return descending ? a.cumulativePackedSize < b.cumulativePackedSize : a.cumulativePackedSize > b.cumulativePackedSize;
+               } );
     break;
   case 5:
-    std::sort(sortableSymbols.begin(), sortableSymbols.begin() + sortableSymbols.size(), [descending](const KKP::KKPSymbol& a, const KKP::KKPSymbol& b) -> bool
-      {
-        double ratioA = 0;
-        if (a.cumulativeUnpackedSize)
-          ratioA = a.cumulativePackedSize / a.cumulativeUnpackedSize;
-        double ratioB = 0;
-        if (b.cumulativeUnpackedSize)
-          ratioB = b.cumulativePackedSize / b.cumulativeUnpackedSize;
-        return descending ? ratioA < ratioB : ratioA > ratioB;
-      });
+    std::sort( sortableSymbols.begin(), sortableSymbols.begin() + sortableSymbols.size(), [ descending ]( const KKP::KKPSymbol& a, const KKP::KKPSymbol& b ) -> bool
+               {
+                 double ratioA = 0;
+                 if ( a.cumulativeUnpackedSize )
+                   ratioA = a.cumulativePackedSize / a.cumulativeUnpackedSize;
+                 double ratioB = 0;
+                 if ( b.cumulativeUnpackedSize )
+                   ratioB = b.cumulativePackedSize / b.cumulativeUnpackedSize;
+                 return descending ? ratioA < ratioB : ratioA > ratioB;
+               } );
     break;
   }
 }
 
-void BuildSymbolList(std::vector<KKP::KKPSymbol>& target, const KKP::KKPSymbol& root, const std::string name)
+void BuildSymbolList( std::vector<KKP::KKPSymbol>& target, const KKP::KKPSymbol& root, const std::string name )
 {
-  for (auto& child : root.children)
+  for ( auto& child : root.children )
   {
-    target.emplace_back(child);
+    target.emplace_back( child );
     target.back().name = name.length() ? name + "::" + target.back().name : target.back().name;
-    BuildSymbolList(target, child, target.back().name);
+    BuildSymbolList( target, child, target.back().name );
   }
 }
 
-void KKP::Load(const std::string& fileName)
+void KKP::Load( const std::string& fileName )
 {
   root = KKPSymbol();
   files.clear();
   bytes.clear();
 
   FILE* reader = nullptr;
-  if (fopen_s(&reader, fileName.data(), "rb"))
+  if ( fopen_s( &reader, fileName.data(), "rb" ) )
     return;
 
   int sourceSize = 0;
   unsigned int fourCC = 0;
   int fileCount = 0;
 
-  if (!fread_s(&fourCC, 4, 4, 1, reader))
+  if ( !fread_s( &fourCC, 4, 4, 1, reader ) )
     goto closeFile;
 
-  if (fourCC != '46KK')
+  if ( fourCC != '46KK' )
     goto closeFile;
 
-  if (!fread_s(&sourceSize, 4, 4, 1, reader))
+  if ( !fread_s( &sourceSize, 4, 4, 1, reader ) )
     goto closeFile;
 
-  if (!fread_s(&fileCount, 4, 4, 1, reader))
+  if ( !fread_s( &fileCount, 4, 4, 1, reader ) )
     goto closeFile;
 
-  for (int x = 0; x < fileCount; x++)
+  for ( int x = 0; x < fileCount; x++ )
   {
     KKPFile f;
-    f.name = ReadASCIIZ(reader);
+    f.name = ReadASCIIZ( reader );
 
-    if (!fread_s(&f.packedSize, 4, 4, 1, reader))
+    if ( !fread_s( &f.packedSize, 4, 4, 1, reader ) )
       goto closeFile;
 
-    if (!fread_s(&f.size, 4, 4, 1, reader))
+    if ( !fread_s( &f.size, 4, 4, 1, reader ) )
       goto closeFile;
 
-    files.emplace_back(f);
+    files.emplace_back( f );
   }
 
   {
     int symbolCount = 0;
-    if (!fread_s(&symbolCount, 4, 4, 1, reader))
+    if ( !fread_s( &symbolCount, 4, 4, 1, reader ) )
       goto closeFile;
 
-    for (int x = 0; x < symbolCount; x++)
+    for ( int x = 0; x < symbolCount; x++ )
     {
       KKPSymbol s;
-      s.name = "Code::" + ReadASCIIZ(reader);
+      s.name = "Code::" + ReadASCIIZ( reader );
 
-      if (!fread_s(&s.packedSize, 8, 8, 1, reader))
+      if ( !fread_s( &s.packedSize, 8, 8, 1, reader ) )
         goto closeFile;
 
       s.cumulativePackedSize = s.packedSize;
 
-      if (!fread_s(&s.unpackedSize, 4, 4, 1, reader))
+      if ( !fread_s( &s.unpackedSize, 4, 4, 1, reader ) )
         goto closeFile;
 
       s.cumulativeUnpackedSize = s.unpackedSize;
 
-      if (!fread_s(&s.isCode, 1, 1, 1, reader))
+      if ( !fread_s( &s.isCode, 1, 1, 1, reader ) )
         goto closeFile;
 
-      if (!fread_s(&s.fileID, 4, 4, 1, reader))
+      if ( !fread_s( &s.fileID, 4, 4, 1, reader ) )
         goto closeFile;
 
-      if (!fread_s(&s.sourcePos, 4, 4, 1, reader))
+      if ( !fread_s( &s.sourcePos, 4, 4, 1, reader ) )
         goto closeFile;
 
       s.originalSymbolID = x;
 
-      AddSymbol(s);
+      AddSymbol( s );
     }
   }
 
   sortableSymbols.clear();
-  BuildSymbolList(sortableSymbols, root, "");
+  BuildSymbolList( sortableSymbols, root, "" );
 
-  bytes.reserve(sourceSize);
-  bytes.resize(sourceSize);
+  bytes.reserve( sourceSize );
+  bytes.resize( sourceSize );
 
-  if (fread_s(bytes.data(), sourceSize * sizeof(KKPByteData), sizeof(KKPByteData), sourceSize, reader) != sourceSize)
+  if ( fread_s( bytes.data(), sourceSize * sizeof( KKPByteData ), sizeof( KKPByteData ), sourceSize, reader ) != sourceSize )
     goto closeFile;
 
 closeFile:
-  fclose(reader);
+  fclose( reader );
 }
 
-void KKP::LoadSym(const std::string& fileName)
+void KKP::LoadSym( const std::string& fileName )
 {
   FILE* reader = nullptr;
-  if (fopen_s(&reader, fileName.data(), "rb"))
+  if ( fopen_s( &reader, fileName.data(), "rb" ) )
     return;
 
   bool found = false;
@@ -367,19 +367,19 @@ void KKP::LoadSym(const std::string& fileName)
   int symbolSize = 0;
 
   unsigned int fourCC = 0;
-  if (!fread_s(&fourCC, 4, 4, 1, reader))
+  if ( !fread_s( &fourCC, 4, 4, 1, reader ) )
     goto closeFile;
 
-  if (fourCC != 'PXHP')
+  if ( fourCC != 'PXHP' )
     goto closeFile;
 
   {
-    std::string symbolName = ReadASCIIZ(reader);
+    std::string symbolName = ReadASCIIZ( reader );
     std::vector<KKP::KKPSymbol> newSymbols;
 
-    for (auto& symbol : sortableSymbols)
+    for ( auto& symbol : sortableSymbols )
     {
-      if (symbol.name == "Code::" + symbolName)
+      if ( symbol.name == "Code::" + symbolName )
       {
         found = true;
         symbolStart = symbol.sourcePos;
@@ -388,62 +388,62 @@ void KKP::LoadSym(const std::string& fileName)
       }
     }
 
-    if (!found)
+    if ( !found )
       goto closeFile;
 
     int dataSize = 0;
-    if (!fread_s(&dataSize, 4, 4, 1, reader))
+    if ( !fread_s( &dataSize, 4, 4, 1, reader ) )
       goto closeFile;
 
-    if (dataSize != symbolSize)
+    if ( dataSize != symbolSize )
       goto closeFile;
 
     int symbolCount = 0;
-    if (!fread_s(&symbolCount, 4, 4, 1, reader))
+    if ( !fread_s( &symbolCount, 4, 4, 1, reader ) )
       goto closeFile;
 
     int maxSymbolID = 0;
-    for (auto& symbol : kkp.sortableSymbols)
-      maxSymbolID = max(maxSymbolID, symbol.originalSymbolID);
+    for ( auto& symbol : kkp.sortableSymbols )
+      maxSymbolID = max( maxSymbolID, symbol.originalSymbolID );
 
-    for (int x = 0; x < symbolCount; x++)
+    for ( int x = 0; x < symbolCount; x++ )
     {
       KKP::KKPSymbol symbol;
-      symbol.name = symbolName + "::" + ReadASCIIZ(reader);
+      symbol.name = symbolName + "::" + ReadASCIIZ( reader );
       symbol.isCode = false;
       symbol.fileID = -1;
       symbol.sourcePos = -1;
       symbol.originalSymbolID = x + maxSymbolID + 1;
-      newSymbols.emplace_back(symbol);
+      newSymbols.emplace_back( symbol );
     }
 
-    for (int x = symbolStart; x < symbolStart + dataSize; x++)
+    for ( int x = symbolStart; x < symbolStart + dataSize; x++ )
     {
       unsigned short symSymbol;
 
-      if (!fread_s(&symSymbol, 2, 2, 1, reader))
+      if ( !fread_s( &symSymbol, 2, 2, 1, reader ) )
         goto closeFile;
 
-      KKP::KKPSymbol& symbol = newSymbols[symSymbol];
+      KKP::KKPSymbol& symbol = newSymbols[ symSymbol ];
 
-      kkp.bytes[x].symbol = (short)symbol.originalSymbolID;
+      kkp.bytes[ x ].symbol = (short)symbol.originalSymbolID;
 
-      if (symbol.sourcePos == -1)
+      if ( symbol.sourcePos == -1 )
         symbol.sourcePos = x;
 
       symbol.unpackedSize++;
-      symbol.packedSize += kkp.bytes[x].packed;
+      symbol.packedSize += kkp.bytes[ x ].packed;
       symbol.cumulativePackedSize = symbol.packedSize;
       symbol.cumulativeUnpackedSize = symbol.unpackedSize;
     }
 
-    for (auto& symbol : newSymbols)
-      AddSymbol(symbol);
+    for ( auto& symbol : newSymbols )
+      AddSymbol( symbol );
 
     sortableSymbols.clear();
-    BuildSymbolList(sortableSymbols, root, "");
+    BuildSymbolList( sortableSymbols, root, "" );
   }
 
 closeFile:
-  fclose(reader);
+  fclose( reader );
 }
