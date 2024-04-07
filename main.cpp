@@ -139,6 +139,8 @@ int openedSource = -1;
 bool sourceChanged = false;
 int selectedSourceLine = 0;
 std::vector<SourceLine> sourceCode;
+std::string sourcePdbRoot;
+std::string sourceLocalRoot;
 
 bool ReadLine(FILE* f, std::string& line)
 {
@@ -154,12 +156,20 @@ bool ReadLine(FILE* f, std::string& line)
     return false;
 }
 
-void OpenSourceFile(int fileIndex)
+void OpenSourceFile(int fileIndex, bool force = false)
 {
-    if (fileIndex == openedSource)
+    if ( fileIndex == openedSource && !force )
+    {
         return;
+    }
+
     openedSource = fileIndex;
     sourceCode.clear();
+
+    if ( fileIndex == 0 ) // <no source>
+    {
+        return;
+    }
 
     if (fileIndex < 0 || !kkp.files[fileIndex].name.size())
     {
@@ -169,11 +179,26 @@ void OpenSourceFile(int fileIndex)
     }
 
     FILE* f = nullptr;
-    if (kkp.files.size() <= fileIndex || fopen_s(&f, kkp.files[fileIndex].name.data(), "rt"))
+    if (kkp.files.size() <= fileIndex)
     {
         SourceLine line = { 0, 1.1, kkp.files[fileIndex].name.data() };
         sourceCode.emplace_back(line);
         return;
+    }
+
+    std::string filepath = kkp.files[ fileIndex ].name;
+    if (fopen_s( &f, filepath.data(), "rt" ))
+    {
+      if ( filepath.find( sourcePdbRoot, 0 ) == 0 )
+      {
+        filepath = sourceLocalRoot + filepath.substr( sourcePdbRoot.length() );
+        if ( fopen_s( &f, filepath.data(), "rt" ) )
+        {
+          SourceLine line = { 0, 1.1, kkp.files[ fileIndex ].name.data() };
+          sourceCode.emplace_back( line );
+          return;
+        }
+      }
     }
 
     struct LineSizeInfo
@@ -510,6 +535,40 @@ void DrawCodeView()
 
     if (ImGui::SmallButton(source.data()))
         ImGui::OpenPopup("SourceCodeSelector");
+
+    if (sourceCode.size() <= 1)
+    {
+      ImGui::SameLine();
+      if ( ImGui::SmallButton( "Browse to file" ) )
+      {
+        char filepath[256] = { 0 };
+
+        OPENFILENAMEA opf = { 0 };
+        opf.lpstrFilter = "C++ files\0*.cpp\0\0";
+        opf.lpstrFile = filepath;
+        opf.nMaxFile = 256;
+        opf.nMaxFileTitle = 50;
+        opf.lpstrDefExt = "cpp";
+        opf.Flags = ( OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NONETWORKBUTTON ) & ~OFN_ALLOWMULTISELECT;
+        opf.lStructSize = sizeof( OPENFILENAME );
+        opf.hInstance = GetModuleHandle( 0 );
+
+        if ( GetOpenFileNameA( &opf ) )
+        {
+          size_t filepathlen = strlen( filepath );
+          for ( size_t i = source.length(), j = filepathlen; i >= 0 && j >= 0; i--, j-- )
+          {
+            if ( source[ i ] != filepath[ j ] )
+            {
+              sourcePdbRoot = source.substr( 0, i + 1 );
+              sourceLocalRoot = std::string( filepath ).substr( 0, j + 1 );
+              OpenSourceFile( openedSource, true );
+              break;
+            }
+          }
+        }
+      }
+    }
 
     if (ImGui::BeginPopup("SourceCodeSelector"))
     {
