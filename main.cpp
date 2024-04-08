@@ -131,6 +131,8 @@ ImU32 GetRatioColor( double ratio )
 struct SourceLine
 {
   int index = 0;
+  int unpackedSize = 0;
+  double packedSize = 0;
   double ratio = 0;
   std::string text;
 };
@@ -173,7 +175,7 @@ void OpenSourceFile( int fileIndex, bool force = false )
 
   if ( fileIndex < 0 || !kkp.files[ fileIndex ].name.size() )
   {
-    SourceLine line = { 0, 0, "No source code associated with symbol" };
+    SourceLine line = { 0, 0, 0, 0, "No source code associated with symbol" };
     sourceCode.emplace_back( line );
     return;
   }
@@ -181,7 +183,7 @@ void OpenSourceFile( int fileIndex, bool force = false )
   FILE* f = nullptr;
   if ( kkp.files.size() <= fileIndex )
   {
-    SourceLine line = { 0, 1.1, kkp.files[ fileIndex ].name.data() };
+    SourceLine line = { 0, 0, 0, 1.1, kkp.files[ fileIndex ].name.data() };
     sourceCode.emplace_back( line );
     return;
   }
@@ -194,7 +196,7 @@ void OpenSourceFile( int fileIndex, bool force = false )
       filepath = sourceLocalRoot + filepath.substr( sourcePdbRoot.length() );
       if ( fopen_s( &f, filepath.data(), "rt" ) )
       {
-        SourceLine line = { 0, 1.1, kkp.files[ fileIndex ].name.data() };
+        SourceLine line = { 0, 0, 0, 1.1, kkp.files[ fileIndex ].name.data() };
         sourceCode.emplace_back( line );
         return;
       }
@@ -226,7 +228,11 @@ void OpenSourceFile( int fileIndex, bool force = false )
 
     srcLine.ratio = 0;
     if ( lineData != lineSizes.end() )
+    {
+      srcLine.unpackedSize += lineData->second.unpacked;
+      srcLine.packedSize += lineData->second.packed;
       srcLine.ratio = lineData->second.packed / lineData->second.unpacked;
+    }
     srcLine.index = lineCount++;
     srcLine.text = line;
 
@@ -580,10 +586,12 @@ void DrawCodeView()
     ImGui::EndPopup();
   }
 
-  if ( ImGui::BeginTable( "source", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY ) )
+  if ( ImGui::BeginTable( "source", 5, ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY ) )
   {
     ImGui::TableSetupScrollFreeze( 0, 1 );
     ImGui::TableSetupColumn( "#", ImGuiTableColumnFlags_WidthStretch );
+    ImGui::TableSetupColumn( "Unpacked", ImGuiTableColumnFlags_WidthStretch );
+    ImGui::TableSetupColumn( "Packed", ImGuiTableColumnFlags_WidthStretch );
     ImGui::TableSetupColumn( "Ratio", ImGuiTableColumnFlags_WidthStretch );
     ImGui::TableSetupColumn( "Code", ImGuiTableColumnFlags_WidthStretch );
 
@@ -651,9 +659,15 @@ void DrawCodeView()
         */
 
         ImGui::TableSetColumnIndex( 1 );
-        ImGui::Text( "%g", line.ratio );
+        ImGui::Text( "%d", line.unpackedSize );
 
         ImGui::TableSetColumnIndex( 2 );
+        ImGui::Text( "%g", line.packedSize );
+
+        ImGui::TableSetColumnIndex( 3 );
+        ImGui::Text( "%g", line.ratio );
+
+        ImGui::TableSetColumnIndex( 4 );
         ImGui::Text( "%s", line.text.data() );
         ImGui::PopStyleColor();
       }
