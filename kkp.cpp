@@ -129,7 +129,8 @@ void KKP::AddSymbol( const KKPSymbol& symbol )
   {
     currNode->cumulativePackedSize += symbol.packedSize;
     currNode->cumulativeUnpackedSize += symbol.unpackedSize;
-    currNode->sourcePos = min( currNode->sourcePos, symbol.sourcePos );
+    if ( symbol.sourcePos )
+      currNode->sourcePos = min( currNode->sourcePos, symbol.sourcePos );
 
     bool found = false;
     for ( auto& c : currNode->children )
