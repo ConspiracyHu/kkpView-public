@@ -913,20 +913,28 @@ void SetSymbolColumns( const KKP::KKPSymbol& symbol )
 
 void ProcessSymbolClick( KKP::KKPSymbol& symbol )
 {
-  if ( ImGui::IsItemFocused() && !symbol.selected && !symbol.children.size() )
+  if ( ImGui::IsItemFocused() && !symbol.selected )
   {
-    auto& byte = kkp.bytes[ max( 0, min( kkp.bytes.size() - 1, symbol.sourcePos ) ) ];
+    if ( !symbol.children.size() )
+    {
+      auto& byte = kkp.bytes[ max( 0, min( kkp.bytes.size() - 1, symbol.sourcePos ) ) ];
 
-    SelectByte( byte );
+      SelectByte( byte );
 
-    symbol.selected = true;
-    symbolSelectionChanged = false;
-    hexViewPositionChanged = true;
-    targetHexViewPosition = symbol.sourcePos;
-    if ( symbol.unpackedSize )
-      hexHighlightSymbol = byte.symbol;
+      symbol.selected = true;
+      symbolSelectionChanged = false;
+      hexViewPositionChanged = true;
+      targetHexViewPosition = symbol.sourcePos;
+      if ( symbol.unpackedSize )
+        hexHighlightSymbol = byte.symbol;
+      else
+        hexHighlightSymbol = -2;
+    }
     else
-      hexHighlightSymbol = -2;
+    {
+      RecursiveClearSymbolSelected( kkp.root );
+      symbol.selected = true;
+    }
   }
 }
 
@@ -998,7 +1006,7 @@ void AddSymbolRecursive( KKP::KKPSymbol& node, const ImVec2& tableTopLeft, int& 
       child.onHotPath = false;
     }
 
-    bool folderOpen = ImGui::TreeNodeEx( child.name.data(), ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen );
+    bool folderOpen = ImGui::TreeNodeEx( child.name.data(), ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Selected * child.selected );
 
     ProcessSymbolClick( child );
 
