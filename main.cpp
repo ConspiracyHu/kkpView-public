@@ -6,6 +6,9 @@
 #include "kkp.h"
 #include <unordered_map>
 #include "profont.h"
+#define ZYDIS_STATIC_BUILD
+#include "Zydis/include/Zydis/Zydis.h"
+
 
 static ID3D11Device* g_pd3dDevice = nullptr;
 static ID3D11DeviceContext* g_pd3dDeviceContext = nullptr;
@@ -140,10 +143,21 @@ struct SourceLine
   std::string text;
 };
 
+struct DisassemblyLine
+{
+  int address = 0;
+  int sourceLine = 0;
+  int unpackedSize = 0;
+  double packedSize = 0;
+  double ratio = 0;
+  std::string text;
+};
+
 int openedSource = -1;
 bool sourceChanged = false;
 int selectedSourceLine = 0;
 std::vector<SourceLine> sourceCode;
+std::vector<DisassemblyLine> disassembly;
 std::string sourcePdbRoot;
 std::string sourceLocalRoot;
 
@@ -278,6 +292,65 @@ void DrawHighlight( ImVec2 topLeft, ImVec2 bottomRight, bool top, bool left, boo
     ImGui::GetWindowDrawList()->AddRectFilled( ImVec2( bottomRight.x - 1, topLeft.y ), bottomRight, borderColor );
 }
 
+void RecursiveClearSymbolSelected( KKP::KKPSymbol& symbol )
+{
+  symbol.selected = false;
+  for ( auto& child : symbol.children )
+    RecursiveClearSymbolSelected( child );
+}
+
+void SelectByte( KKP::KKPByteData& byte )
+{
+  RecursiveClearSymbolSelected( kkp.root );
+  for ( auto& sym : kkp.sortableSymbols )
+    sym.selected = byte.symbol == sym.originalSymbolID;
+
+  OpenSourceFile( byte.file );
+  selectedSourceLine = byte.line;
+  sourceChanged = true;
+  hexHighlightMode = HexHighlightMode::Symbol;
+  hexHighlightSymbol = byte.symbol;
+  symbolSelectionChanged = true;
+  newlySelectedSymbolID = byte.symbol;
+
+  disassembly.clear();
+
+  for ( auto& symbol : kkp.sortableSymbols )
+  {
+    if ( symbol.originalSymbolID == byte.symbol && symbol.unpackedSize > 0 )
+    {
+      unsigned char* data = new unsigned char[ symbol.unpackedSize ];
+      memset( data, 0, symbol.unpackedSize );
+      for ( int x = 0; x < symbol.unpackedSize; x++ )
+        data[ x ] = kkp.bytes[ symbol.sourcePos + x ].data;
+
+      ZyanU64 address = symbol.sourcePos;
+
+      ZyanUSize offset = 0;
+      ZydisDisassembledInstruction instruction;
+      while ( ZYAN_SUCCESS( ZydisDisassembleIntel( ZYDIS_MACHINE_MODE_LONG_COMPAT_32, address, data + offset, symbol.unpackedSize - offset, &instruction ) ) )
+      {
+        DisassemblyLine line;
+        line.address = (int)address;
+        line.unpackedSize = instruction.info.length;
+        line.text = instruction.text;
+        line.sourceLine = kkp.bytes[ symbol.sourcePos + offset ].line;
+
+        for ( int x = 0; x < instruction.info.length; x++ )
+          line.packedSize += kkp.bytes[ symbol.sourcePos + offset + x ].packed;
+        line.ratio = line.packedSize / line.unpackedSize;
+
+        offset += instruction.info.length;
+        address += instruction.info.length;
+        disassembly.emplace_back( line );
+      }
+
+      delete[] data;
+      break;
+    }
+  }
+}
+
 void DrawHexView()
 {
   bool mouseSymbolFound = false;
@@ -375,13 +448,7 @@ void DrawHexView()
                 ImGui::SetWindowFocus();
                 for ( auto& sym : kkp.sortableSymbols )
                   sym.selected = sym.originalSymbolID == byte.symbol && byte.symbol >= 0;
-                OpenSourceFile( byte.file );
-                selectedSourceLine = byte.line;
-                sourceChanged = true;
-                hexHighlightMode = HexHighlightMode::Symbol;
-                hexHighlightSymbol = byte.symbol;
-                symbolSelectionChanged = true;
-                newlySelectedSymbolID = byte.symbol;
+                SelectByte( byte );
               }
             }
 
@@ -480,13 +547,7 @@ void DrawHexView()
                 ImGui::SetWindowFocus();
                 for ( auto& sym : kkp.sortableSymbols )
                   sym.selected = sym.originalSymbolID == byte.symbol && byte.symbol >= 0;
-                OpenSourceFile( byte.file );
-                selectedSourceLine = byte.line;
-                sourceChanged = true;
-                hexHighlightMode = HexHighlightMode::Symbol;
-                hexHighlightSymbol = byte.symbol;
-                symbolSelectionChanged = true;
-                newlySelectedSymbolID = byte.symbol;
+                SelectByte( byte );
               }
             }
 
@@ -625,16 +686,117 @@ void DrawCodeView()
 
         if ( ImGui::IsItemFocused() && selectedSourceLine != line.index )
         {
+          for ( int x = 0; x < kkp.bytes.size(); x++ )
+          {
+            auto& byte = kkp.bytes[ x ];
+            if ( byte.line == line.index && byte.file == openedSource )
+            {
+              SelectByte( kkp.bytes[ x ] );
+              break;
+            }
+          }
+
           selectedSourceLine = line.index;
           hexHighlightMode = HexHighlightMode::Line;
           hexHighlightLine = line.index;
+          hexHighlightSource = openedSource;
+          hexViewPositionChanged = true;
+        }
+
+
+        auto color = GetRatioColor( line.ratio );
+        ImGui::PushStyleColor( ImGuiCol_Text, color );
+
+        /*
+                    ImGuiSelectableFlags selectableFlags = ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap;
+                    if (ImGui::Selectable(symbol.name.data(), symbol.selected, selectableFlags))
+                    {
+                        for (auto& sym : kkp.sortableSymbols)
+                            sym.selected = false;
+                        symbol.selected = true;
+                    }
+        */
+
+        /*
+                        ImGui::TableSetColumnIndex(0);
+                        ImGui::Text("%d", line.index);
+        */
+
+        ImGui::TableSetColumnIndex( 1 );
+        ImGui::Text( "%d", line.unpackedSize );
+
+        ImGui::TableSetColumnIndex( 2 );
+        ImGui::Text( "%g", line.packedSize );
+
+        ImGui::TableSetColumnIndex( 3 );
+        ImGui::Text( "%g", line.ratio );
+
+        ImGui::TableSetColumnIndex( 4 );
+        ImGui::Text( "%s", line.text.data() );
+        ImGui::PopStyleColor();
+      }
+    }
+
+    ImGui::EndTable();
+  }
+
+  sourceChanged = false;
+}
+
+void DrawDisassemblyView()
+{
+  if ( ImGui::BeginTable( "disassembly", 5, ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY ) )
+  {
+    ImGui::TableSetupScrollFreeze( 0, 1 );
+    ImGui::TableSetupColumn( "#", ImGuiTableColumnFlags_WidthStretch );
+    ImGui::TableSetupColumn( "Unpacked", ImGuiTableColumnFlags_WidthStretch );
+    ImGui::TableSetupColumn( "Packed", ImGuiTableColumnFlags_WidthStretch );
+    ImGui::TableSetupColumn( "Ratio", ImGuiTableColumnFlags_WidthStretch );
+    ImGui::TableSetupColumn( "Code", ImGuiTableColumnFlags_WidthStretch );
+
+    ImGui::TableHeadersRow();
+
+    if ( openedSource < 0 || !kkp.files[ openedSource ].name.size() )
+    {
+      ImGui::EndTable();
+      return;
+    }
+
+    ImGuiListClipper clipper;
+    clipper.Begin( (int)disassembly.size() );
+
+    if ( sourceChanged )
+      ImGui::SetScrollY( ImGui::GetTextLineHeightWithSpacing() * selectedSourceLine - ImGui::GetWindowHeight() / 2 );
+
+    while ( clipper.Step() )
+    {
+      for ( int row = clipper.DisplayStart; row < clipper.DisplayEnd; row++ )
+      {
+        auto& line = disassembly[ row ];
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex( 0 );
+
+        char indexText[ 10 ]{};
+        sprintf_s( indexText, "0x%x", line.address );
+
+        ImGuiSelectableFlags selectableFlags = ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap;
+        if ( ImGui::Selectable( indexText, line.sourceLine == selectedSourceLine, selectableFlags ) )
+        {
+        }
+
+        if ( ImGui::IsItemFocused() && selectedSourceLine != line.address )
+        {
+          selectedSourceLine = line.address;
+          hexHighlightMode = HexHighlightMode::Line;
+          hexHighlightLine = line.address;
           hexHighlightSource = openedSource;
           hexViewPositionChanged = true;
 
           for ( int x = 0; x < kkp.bytes.size(); x++ )
           {
             auto& byte = kkp.bytes[ x ];
-            if ( byte.line == line.index && byte.file == openedSource )
+            if ( byte.line == line.address && byte.file == openedSource )
             {
               targetHexViewPosition = x;
               break;
@@ -682,6 +844,7 @@ void DrawCodeView()
   sourceChanged = false;
 }
 
+
 const int numberOfColumns = 5;
 static bool scopes = false;
 static bool foldersOnTop = true;
@@ -705,31 +868,17 @@ void SetSymbolColumns( const KKP::KKPSymbol& symbol )
   ImGui::Text( "%g", ratio );
 }
 
-void RecursiveClearSymbolSelected( KKP::KKPSymbol& symbol )
-{
-  symbol.selected = false;
-  for ( auto& child : symbol.children )
-    RecursiveClearSymbolSelected( child );
-}
-
-void DoSymbolSelection( KKP::KKPSymbol& symbol )
+void ProcessSymbolClick( KKP::KKPSymbol& symbol )
 {
   if ( ImGui::IsItemFocused() && !symbol.selected )
   {
-    RecursiveClearSymbolSelected( kkp.root );
-    for ( auto& sym : kkp.sortableSymbols )
-      sym.selected = false;
-    symbol.selected = true;
-    OpenSourceFile( symbol.fileID );
     auto& byte = kkp.bytes[ max( 0, min( kkp.bytes.size() - 1, symbol.sourcePos ) ) ];
-    selectedSourceLine = byte.line;
-    sourceChanged = true;
 
+    SelectByte( byte );
+
+    symbolSelectionChanged = false;
     hexViewPositionChanged = true;
     targetHexViewPosition = symbol.sourcePos;
-
-    hexHighlightMode = HexHighlightMode::Symbol;
-
     if ( symbol.unpackedSize )
       hexHighlightSymbol = byte.symbol;
     else
@@ -752,7 +901,7 @@ void AddNonFolder( KKP::KKPSymbol& symbol, const ImVec2& tableTopLeft, int& rowI
     ImGui::PushStyleColor( ImGuiCol_Text, GetRatioColor( ratio ) );
     ImGui::TableSetColumnIndex( 0 );
     ImGui::Selectable( symbol.name.data(), symbol.selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap );
-    DoSymbolSelection( symbol );
+    ProcessSymbolClick( symbol );
     SetSymbolColumns( symbol );
     ImGui::PopStyleColor();
   }
@@ -793,7 +942,7 @@ void AddSymbolRecursive( KKP::KKPSymbol& node, const ImVec2& tableTopLeft, int& 
     ImGui::TableSetColumnIndex( 0 );
     bool folderOpen = ImGui::TreeNodeEx( child.name.data(), ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen | ( ImGuiTreeNodeFlags_Selected * child.selected ) );
 
-    DoSymbolSelection( child );
+    ProcessSymbolClick( child );
 
     if ( rowVisible )
       SetSymbolColumns( child );
@@ -886,7 +1035,7 @@ void DrawSymbolList()
           ImGui::PushStyleColor( ImGuiCol_Text, GetRatioColor( ratio ) );
 
           ImGui::Selectable( symbol.name.data(), symbol.selected, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap );
-          DoSymbolSelection( symbol );
+          ProcessSymbolClick( symbol );
 
           SetSymbolColumns( symbol );
 
@@ -1023,6 +1172,7 @@ INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     const float vSplitterPos = 0.5f;
     const float verticalSplitPixelPos = windowSize.x * vSplitterPos;
     const float horizontalSplitPixelPos = ( windowSize.y * hSplitterPos );
+    const float codeSplitterPos = 0.75f;
 
     ImGui::BeginChild( "left side", ImVec2( verticalSplitPixelPos, -1 ), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX );
     {
@@ -1033,8 +1183,17 @@ INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
       // Lower part of the left area
       ImGui::BeginChild( "Code View", ImVec2( -1, -1 ), ImGuiChildFlags_None );
-      DrawCodeView();
-      ImGui::EndChild();
+      {
+        const float codeSplitPixelPos = windowSize.x * codeSplitterPos;
+        ImGui::BeginChild( "left side", ImVec2( verticalSplitPixelPos, -1 ), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX );
+        {
+          DrawCodeView();
+          ImGui::EndChild();
+          ImGui::SameLine();
+          DrawDisassemblyView();
+        }
+        ImGui::EndChild();
+      }
     }
     ImGui::EndChild();
 

@@ -5,6 +5,8 @@ VisualStudioVersion = 17.7.34221.43
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "kkpViewer", "kkpViewer.vcxproj", "{B0D902FC-59B1-4041-BDE8-3A9963933175}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Zydis", "zydis\msvc\zydis\Zydis.vcxproj", "{88A23124-5640-35A0-B890-311D7A67A7D2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,14 @@ Global
 		{B0D902FC-59B1-4041-BDE8-3A9963933175}.Release|x64.Build.0 = Release|x64
 		{B0D902FC-59B1-4041-BDE8-3A9963933175}.Release|x86.ActiveCfg = Release|Win32
 		{B0D902FC-59B1-4041-BDE8-3A9963933175}.Release|x86.Build.0 = Release|Win32
+		{88A23124-5640-35A0-B890-311D7A67A7D2}.Debug|x64.ActiveCfg = Debug MT|x64
+		{88A23124-5640-35A0-B890-311D7A67A7D2}.Debug|x64.Build.0 = Debug MT|x64
+		{88A23124-5640-35A0-B890-311D7A67A7D2}.Debug|x86.ActiveCfg = Debug MD|Win32
+		{88A23124-5640-35A0-B890-311D7A67A7D2}.Debug|x86.Build.0 = Debug MD|Win32
+		{88A23124-5640-35A0-B890-311D7A67A7D2}.Release|x64.ActiveCfg = Release MT|x64
+		{88A23124-5640-35A0-B890-311D7A67A7D2}.Release|x64.Build.0 = Release MT|x64
+		{88A23124-5640-35A0-B890-311D7A67A7D2}.Release|x86.ActiveCfg = Release MT DLL|Win32
+		{88A23124-5640-35A0-B890-311D7A67A7D2}.Release|x86.Build.0 = Release MT DLL|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
