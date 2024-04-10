@@ -299,11 +299,41 @@ void RecursiveClearSymbolSelected( KKP::KKPSymbol& symbol )
     RecursiveClearSymbolSelected( child );
 }
 
+void RecursiveClearSymbolHotPath( KKP::KKPSymbol& symbol )
+{
+  symbol.onHotPath = false;
+  for ( auto& child : symbol.children )
+    RecursiveClearSymbolHotPath( child );
+}
+
+bool SetSymbolHotPath( KKP::KKPSymbol& symbol, int symbolID )
+{
+  if ( symbol.originalSymbolID == symbolID )
+  {
+    symbol.onHotPath = true;
+    return true;
+  }
+
+  for ( auto& sym : symbol.children )
+  {
+    if ( SetSymbolHotPath( sym, symbolID ) )
+    {
+      sym.onHotPath = true;
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void SelectByte( KKP::KKPByteData& byte )
 {
   RecursiveClearSymbolSelected( kkp.root );
   for ( auto& sym : kkp.sortableSymbols )
-    sym.selected = byte.symbol == sym.originalSymbolID;
+    sym.selected = byte.symbol == sym.originalSymbolID && byte.symbol >= 0;
+
+  RecursiveClearSymbolHotPath( kkp.root );
+  SetSymbolHotPath( kkp.root, byte.symbol );
 
   OpenSourceFile( byte.file );
   selectedSourceLine = byte.line;
@@ -870,12 +900,13 @@ void SetSymbolColumns( const KKP::KKPSymbol& symbol )
 
 void ProcessSymbolClick( KKP::KKPSymbol& symbol )
 {
-  if ( ImGui::IsItemFocused() && !symbol.selected )
+  if ( ImGui::IsItemFocused() && !symbol.selected && !symbol.children.size() )
   {
     auto& byte = kkp.bytes[ max( 0, min( kkp.bytes.size() - 1, symbol.sourcePos ) ) ];
 
     SelectByte( byte );
 
+    symbol.selected = true;
     symbolSelectionChanged = false;
     hexViewPositionChanged = true;
     targetHexViewPosition = symbol.sourcePos;
@@ -888,6 +919,13 @@ void ProcessSymbolClick( KKP::KKPSymbol& symbol )
 
 void AddNonFolder( KKP::KKPSymbol& symbol, const ImVec2& tableTopLeft, int& rowIndex, const ImVec2& windowSize, const float rowHeight, const float scroll )
 {
+  if ( symbolSelectionChanged && symbol.originalSymbolID == newlySelectedSymbolID )
+  {
+    symbol.selected = true;
+    ImGui::SetScrollHereY();
+    symbolSelectionChanged = false;
+  }
+
   ImGui::TableNextRow();
 
   float rowTop = rowIndex * rowHeight;
@@ -940,7 +978,14 @@ void AddSymbolRecursive( KKP::KKPSymbol& node, const ImVec2& tableTopLeft, int& 
     }
 
     ImGui::TableSetColumnIndex( 0 );
-    bool folderOpen = ImGui::TreeNodeEx( child.name.data(), ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen | ( ImGuiTreeNodeFlags_Selected * child.selected ) );
+
+    if ( child.onHotPath )
+    {
+      ImGui::SetNextItemOpen( true );
+      child.onHotPath = false;
+    }
+
+    bool folderOpen = ImGui::TreeNodeEx( child.name.data(), ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen );
 
     ProcessSymbolClick( child );
 
@@ -1007,15 +1052,18 @@ void DrawSymbolList()
 
     if ( symbolSelectionChanged )
     {
-      for ( int x = 0; x < kkp.sortableSymbols.size(); x++ )
+      if ( !scopes )
       {
-        if ( kkp.sortableSymbols[ x ].originalSymbolID == newlySelectedSymbolID )
+        for ( int x = 0; x < kkp.sortableSymbols.size(); x++ )
         {
-          ImGui::SetScrollY( ImGui::GetTextLineHeightWithSpacing() * x - ImGui::GetWindowHeight() / 2 );
-          break;
+          if ( kkp.sortableSymbols[ x ].originalSymbolID == newlySelectedSymbolID )
+          {
+            ImGui::SetScrollY( ImGui::GetTextLineHeightWithSpacing() * x - ImGui::GetWindowHeight() / 2 );
+            break;
+          }
         }
+        symbolSelectionChanged = false;
       }
-      symbolSelectionChanged = false;
     }
 
 

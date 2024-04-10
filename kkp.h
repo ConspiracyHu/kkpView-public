@@ -28,6 +28,7 @@ public:
     int originalSymbolID = -1;
 
     bool selected = false;
+    bool onHotPath = false; // used to force open the folder view when a symbol is selected
 
     std::vector<KKPSymbol> children;
   };
