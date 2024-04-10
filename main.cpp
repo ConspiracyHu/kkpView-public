@@ -156,6 +156,7 @@ struct DisassemblyLine
 int openedSource = -1;
 bool sourceChanged = false;
 int selectedSourceLine = 0;
+bool selectedSourceLineChanged = false;
 std::vector<SourceLine> sourceCode;
 std::vector<DisassemblyLine> disassembly;
 std::string sourcePdbRoot;
@@ -337,6 +338,7 @@ void SelectByte( KKP::KKPByteData& byte )
 
   OpenSourceFile( byte.file );
   selectedSourceLine = byte.line;
+  selectedSourceLineChanged = true;
   sourceChanged = true;
   hexHighlightMode = HexHighlightMode::Symbol;
   hexHighlightSymbol = byte.symbol;
@@ -727,6 +729,7 @@ void DrawCodeView()
           }
 
           selectedSourceLine = line.index;
+          selectedSourceLineChanged = true;
           hexHighlightMode = HexHighlightMode::Line;
           hexHighlightLine = line.index;
           hexHighlightSource = openedSource;
@@ -795,8 +798,18 @@ void DrawDisassemblyView()
     ImGuiListClipper clipper;
     clipper.Begin( (int)disassembly.size() );
 
-    if ( sourceChanged )
-      ImGui::SetScrollY( ImGui::GetTextLineHeightWithSpacing() * selectedSourceLine - ImGui::GetWindowHeight() / 2 );
+    if ( selectedSourceLineChanged )
+    {
+      for ( int x = 0; x < disassembly.size(); x++ )
+      {
+        if ( disassembly[ x ].sourceLine == selectedSourceLine )
+        {
+          ImGui::SetScrollY( ImGui::GetTextLineHeightWithSpacing() * x - ImGui::GetWindowHeight() / 2 );
+          break;
+        }
+      }
+      selectedSourceLineChanged = false;
+    }
 
     while ( clipper.Step() )
     {
