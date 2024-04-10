@@ -718,7 +718,7 @@ void DoSymbolSelection( KKP::KKPSymbol& symbol )
       sym.selected = false;
     symbol.selected = true;
     OpenSourceFile( symbol.fileID );
-    auto& byte = kkp.bytes[ symbol.sourcePos ];
+    auto& byte = kkp.bytes[ max( 0, min( kkp.bytes.size() - 1, symbol.sourcePos ) ) ];
     selectedSourceLine = byte.line;
     sourceChanged = true;
 
