@@ -19,8 +19,9 @@ void CreateRenderTarget();
 void CleanupRenderTarget();
 LRESULT WINAPI WndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam );
 
+bool darkColors = true;
+
 // crinkler color scheme
-/*
 ImU32 heatMap[]
 {
     0x80ffffff, // 0.0
@@ -36,7 +37,7 @@ ImU32 heatMap[]
     0xffff0000, // 1000000.0
 };
 
-ImU32 GetRatioColor(double ratio)
+ImU32 GetCrinklerRatioColor(double ratio)
 {
     if (ratio == 0 || isinf(ratio) || isnan(ratio))
         return 0xff808080;
@@ -64,7 +65,6 @@ ImU32 GetRatioColor(double ratio)
         return heatMap[10];
     return heatMap[10];
 }
-*/
 
 ImU32 GetCompressionColorGradient( int t )
 {
@@ -101,6 +101,9 @@ ImU32 GetCompressionColorGradient( int t )
 
 ImU32 GetRatioColor( double ratio )
 {
+  if ( !darkColors )
+    return GetCrinklerRatioColor( ratio );
+
   if ( ratio == 0 || isinf( ratio ) || isnan( ratio ) )
     return 0xff808080;
 
@@ -990,6 +993,16 @@ INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
       }
       if ( ImGui::MenuItem( "Open sym file", nullptr, nullptr, true ) )
         OpenSYM();
+      
+      if ( ImGui::MenuItem( "Toggle color scheme", nullptr, nullptr, true ) )
+      {
+        darkColors = !darkColors;
+        if ( darkColors )
+          ImGui::StyleColorsDark();
+        else
+          ImGui::StyleColorsLight();
+      }
+
       ImGui::EndMenu();
     }
 
