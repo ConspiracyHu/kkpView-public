@@ -361,7 +361,7 @@ void DrawHexView()
               }
 
               ImGui::BeginTooltip();
-              ImGui::Text( "%08x %s", bytePos, symbolIndex >= 0 && kkp.sortableSymbols[ symbolIndex ].name.size() ? kkp.sortableSymbols[ symbolIndex ].name.data() : "<no symbol>" );
+              ImGui::Text( "%08x (%g) %s", bytePos, byte.packed, symbolIndex >= 0 && kkp.sortableSymbols[ symbolIndex ].name.size() ? kkp.sortableSymbols[ symbolIndex ].name.data() : "<no symbol>" );
               ImGui::EndTooltip();
 
               hexMouseSymbol = byte.symbol;
