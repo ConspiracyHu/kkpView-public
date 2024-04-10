@@ -1253,8 +1253,9 @@ INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
       // Lower part of the left area
       ImGui::BeginChild( "Code View", ImVec2( -1, -1 ), ImGuiChildFlags_None );
       {
+        windowSize = ImGui::GetContentRegionAvail();
         const float codeSplitPixelPos = windowSize.x * codeSplitterPos;
-        ImGui::BeginChild( "left side", ImVec2( verticalSplitPixelPos, -1 ), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX );
+        ImGui::BeginChild( "left side", ImVec2( codeSplitPixelPos, -1 ), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX );
         {
           DrawCodeView();
           ImGui::EndChild();
