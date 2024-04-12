@@ -24,6 +24,7 @@
     <ClCompile Include="ImGui\backends\imgui_impl_win32.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="kkp.h" />
@@ -51,6 +52,8 @@
     <ClInclude Include="ImGui\backends\imgui_impl_win32.h">
       <Filter>ImGui</Filter>
     </ClInclude>
+    <ClInclude Include="window.h" />
+    <ClInclude Include="profont.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ImGui">
