@@ -4,3 +4,4 @@
 *.user
 *.diagsession
 imgui.ini
+*.args.json
