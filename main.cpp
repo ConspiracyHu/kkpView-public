@@ -1120,6 +1120,24 @@ void DrawSymbolList()
   }
 }
 
+void LoadFile( const char* filePath )
+{
+  const char * ext = strrchr( filePath, '.' );
+  if ( !ext )
+  {
+    return;
+  }
+
+  if ( _stricmp( ext, ".kkp" ) == 0 )
+  {
+    kkp.Load( filePath );
+  }
+  else if ( _stricmp( ext, ".sym" ) == 0 )
+  {
+    kkp.LoadSym( filePath );
+  }
+}
+
 INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ INT nCmdShow )
 {
   //ImGui_ImplWin32_EnableDpiAwareness();
@@ -1136,6 +1154,7 @@ INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
 
   ::ShowWindow( hwnd, SW_SHOWMAXIMIZED );
   ::UpdateWindow( hwnd );
+  DragAcceptFiles( hwnd, TRUE );
 
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
@@ -1156,9 +1175,9 @@ INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
   int rtWidth = 0;
   int rtHeight = 0;
 
-  if (__argc > 1)
+  for ( int i = 1; i < __argc; i++ )
   {
-    kkp.Load( __argv[ 1 ] );
+    LoadFile( __argv[ i ] );
   }
 
   ImGui::PushStyleVar( ImGuiStyleVar_WindowPadding, ImVec2( 0, 0 ) );
@@ -1171,11 +1190,27 @@ INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     {
       ::TranslateMessage( &msg );
       ::DispatchMessage( &msg );
+      if ( msg.message == WM_DROPFILES )
+      {
+        HDROP drop = (HDROP)msg.wParam;
+        int count = DragQueryFileA( drop, -1, nullptr, 0 );
+        for ( int i = 0; i < count; i++ )
+        {
+          char sz[ MAX_PATH ] = { 0 };
+          DragQueryFileA( drop, i, sz, MAX_PATH );
+          LoadFile( sz );
+        }
+        DragFinish( drop );
+      }
       if ( msg.message == WM_QUIT )
+      {
         done = true;
+      }
     }
     if ( done )
+    {
       break;
+    }
 
     if ( g_ResizeWidth != 0 && g_ResizeHeight != 0 )
     {
