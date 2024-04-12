@@ -1167,6 +1167,11 @@ INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
   int rtWidth = 0;
   int rtHeight = 0;
 
+  if (__argc > 1)
+  {
+    kkp.Load( __argv[ 1 ] );
+  }
+
   ImGui::PushStyleVar( ImGuiStyleVar_WindowPadding, ImVec2( 0, 0 ) );
 
   bool done = false;
