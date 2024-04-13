@@ -157,6 +157,7 @@
     <ClInclude Include="ImGui\imstb_truetype.h" />
     <ClInclude Include="kkp.h" />
     <ClInclude Include="profont.h" />
+    <ClInclude Include="version.h" />
     <ClInclude Include="window.h" />
   </ItemGroup>
   <ItemGroup>

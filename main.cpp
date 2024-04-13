@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include "profont.h"
 #include "window.h"
+#include "version.h"
 
 #define ZYDIS_STATIC_BUILD
 #include "Zydis/include/Zydis/Zydis.h"
@@ -1143,7 +1144,7 @@ INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
   //ImGui_ImplWin32_EnableDpiAwareness();
   WNDCLASSEXW wc = { sizeof( wc ), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle( nullptr ), nullptr, nullptr, nullptr, nullptr, L"ImGui Example", nullptr };
   ::RegisterClassExW( &wc );
-  HWND hwnd = ::CreateWindowW( wc.lpszClassName, L"Conspiracy KKP Analyzer", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, nullptr, nullptr, wc.hInstance, nullptr );
+  HWND hwnd = ::CreateWindowW( wc.lpszClassName, L"Conspiracy KKP Analyzer " VERSION, WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, nullptr, nullptr, wc.hInstance, nullptr );
 
   if ( !CreateDeviceD3D( hwnd ) )
   {

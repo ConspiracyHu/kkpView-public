@@ -54,6 +54,7 @@
     </ClInclude>
     <ClInclude Include="window.h" />
     <ClInclude Include="profont.h" />
+    <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ImGui">
