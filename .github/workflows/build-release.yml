@@ -18,12 +18,12 @@ jobs:
     
     - name: Get version number
       id: version
-      working-directory: ./KKPView-public/
+      working-directory: ./KKPViewer/
       run: |
         $version = (Get-Content version.h | Select-String -Pattern "#define VERSION \"(.*)\"").Matches.Groups[1].Value
         echo "version=$($version)" >> $env:GITHUB_OUTPUT
     - name: Create tag
-      working-directory: ./KKPViewer/KKPViewer/
+      working-directory: ./KKPViewer/
       run: |
         git config --global user.name "${{ github.actor }} (automated)"
         git config --global user.email "${{ github.actor }}@users.noreply.github.com"
@@ -44,9 +44,9 @@ jobs:
     - name: Collect package
       working-directory: ./package/
       run: |
-        cp ../kkpView-public/Release/kkpViewer.exe ./kkpView-x86.exe
-        cp ../kkpView-public/x64/Release/kkpViewer.exe ./kkpView-x64.exe
-        cp ../kkpView-public/README.md
+        cp ../KKPViewer/Release/kkpViewer.exe ./kkpView-x86.exe
+        cp ../KKPViewer/x64/Release/kkpViewer.exe ./kkpView-x64.exe
+        cp ../KKPViewer/README.md
     - name: ZIP package
       working-directory: ./package/
       run: 7z a -r -tzip kkpView-${{ steps.version.outputs.version }}.zip * -mx9
