@@ -20,7 +20,7 @@ jobs:
       id: version
       working-directory: ./KKPViewer/
       run: |
-        $version = (Get-Content version.h | Select-String -Pattern "#define VERSION \"(.*)\"").Matches.Groups[1].Value
+        $version = (Get-Content version.h | Select-String -Pattern '#define VERSION "(.*)"').Matches.Groups[1].Value
         echo "version=$($version)" >> $env:GITHUB_OUTPUT
     - name: Create tag
       working-directory: ./KKPViewer/
