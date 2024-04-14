@@ -189,7 +189,7 @@ void OpenSourceFile( int fileIndex, bool force = false )
   }
 
   FILE* f = nullptr;
-  if ( kkp.files.size() <= fileIndex )
+  if ( (int)kkp.files.size() <= fileIndex )
   {
     SourceLine line = { 0, 0, 0, 1.1, kkp.files[ fileIndex ].name.data() };
     sourceCode.emplace_back( line );
@@ -339,7 +339,7 @@ void SelectByte( KKP::KKPByteData& byte )
 
   for ( auto& symbol : kkp.sortableSymbols )
   {
-    if ( symbol.originalSymbolID == byte.symbol && symbol.unpackedSize > 0 )
+    if ( symbol.originalSymbolID == byte.symbol && symbol.unpackedSize > 0 && symbol.isCode )
     {
       unsigned char* data = new unsigned char[ symbol.unpackedSize ];
       memset( data, 0, symbol.unpackedSize );
@@ -418,8 +418,8 @@ void DrawHexView()
 
     while ( clipper.Step() )
     {
-      int startByte = (int)min( clipper.DisplayStart * bytesPerRow, kkp.bytes.size() );
-      int endByte = (int)min( clipper.DisplayEnd * bytesPerRow, kkp.bytes.size() );
+      int startByte = (int)min( clipper.DisplayStart * bytesPerRow, (int)kkp.bytes.size() );
+      int endByte = (int)min( clipper.DisplayEnd * bytesPerRow, (int)kkp.bytes.size() );
 
       for ( int i = startByte; i < endByte; i++ )
       {
@@ -437,7 +437,7 @@ void DrawHexView()
           {
             int bytePos = start + x;
 
-            if ( bytePos >= kkp.bytes.size() )
+            if ( bytePos >= (int)kkp.bytes.size() )
               continue;
 
             auto& byte = kkp.bytes[ bytePos ];
@@ -449,7 +449,7 @@ void DrawHexView()
             if ( mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x < pos.x + width && mousePos.y < pos.y + lineHeight )
             {
               int symbolIndex = -1;
-              for ( int y = 0; y < kkp.sortableSymbols.size(); y++ )
+              for ( int y = 0; y < (int)kkp.sortableSymbols.size(); y++ )
               {
                 if ( kkp.sortableSymbols[ y ].originalSymbolID == byte.symbol && byte.symbol >= 0 )
                 {
@@ -479,8 +479,8 @@ void DrawHexView()
               bool top = bytePos < bytesPerRow || kkp.bytes[ bytePos - bytesPerRow ].symbol != hexHighlightSymbol;
               bool left = !( bytePos % bytesPerRow ) || ( bytePos && kkp.bytes[ bytePos - 1 ].symbol != hexHighlightSymbol );
               int bottomTarget = bytePos + bytesPerRow + 1;
-              bool bottom = ( bytePos > kkp.bytes.size() - bytesPerRow - 2 ) || ( bottomTarget < kkp.bytes.size() && kkp.bytes[ bottomTarget ].symbol != hexHighlightSymbol );
-              bool right = ( bytePos % bytesPerRow == bytesPerRow - 1 ) || bytePos == kkp.bytes.size() - 1 || ( bytePos < kkp.bytes.size() - 1 && kkp.bytes[ bytePos + 1 ].symbol != hexHighlightSymbol );
+              bool bottom = ( bytePos > ( int )kkp.bytes.size() - bytesPerRow - 2 ) || ( bottomTarget < (int)kkp.bytes.size() && kkp.bytes[ bottomTarget ].symbol != hexHighlightSymbol );
+              bool right = ( bytePos % bytesPerRow == bytesPerRow - 1 ) || bytePos == kkp.bytes.size() - 1 || ( bytePos < (int)kkp.bytes.size() - 1 && kkp.bytes[ bytePos + 1 ].symbol != hexHighlightSymbol );
 
               float w = hexCharWidth;
               if ( right )
@@ -511,8 +511,8 @@ void DrawHexView()
             {
               bool top = bytePos < bytesPerRow || kkp.bytes[ bytePos - bytesPerRow ].line != hexHighlightLine || kkp.bytes[ bytePos - bytesPerRow ].file != hexHighlightSource;
               bool left = !( bytePos % bytesPerRow ) || ( bytePos && kkp.bytes[ bytePos - 1 ].line != hexHighlightLine ) || ( bytePos && kkp.bytes[ bytePos - 1 ].file != hexHighlightSource );
-              bool bottom = ( bytePos > ( kkp.bytes.size() - bytesPerRow ) ) || kkp.bytes[ bytePos + bytesPerRow + 1 ].line != hexHighlightLine || kkp.bytes[ bytePos + bytesPerRow + 1 ].file != hexHighlightSource;
-              bool right = ( bytePos % bytesPerRow == bytesPerRow - 1 ) || ( bytePos == kkp.bytes.size() - 1 ) || ( bytePos < kkp.bytes.size() - 1 && kkp.bytes[ bytePos + 1 ].line != hexHighlightLine ) || ( bytePos < kkp.bytes.size() - 1 && kkp.bytes[ bytePos + 1 ].file != hexHighlightSource );
+              bool bottom = ( bytePos > ( (int)kkp.bytes.size() - bytesPerRow ) ) || kkp.bytes[ bytePos + bytesPerRow + 1 ].line != hexHighlightLine || kkp.bytes[ bytePos + bytesPerRow + 1 ].file != hexHighlightSource;
+              bool right = ( bytePos % bytesPerRow == bytesPerRow - 1 ) || ( bytePos == kkp.bytes.size() - 1 ) || ( bytePos < (int)kkp.bytes.size() - 1 && kkp.bytes[ bytePos + 1 ].line != hexHighlightLine ) || ( bytePos < (int)kkp.bytes.size() - 1 && kkp.bytes[ bytePos + 1 ].file != hexHighlightSource );
 
               float w = hexCharWidth;
               if ( right )
@@ -540,7 +540,7 @@ void DrawHexView()
           {
             int bytePos = start + x;
 
-            if ( bytePos >= kkp.bytes.size() )
+            if ( bytePos >= (int)kkp.bytes.size() )
               continue;
 
             auto& byte = kkp.bytes[ bytePos ];
@@ -548,7 +548,7 @@ void DrawHexView()
             if ( mousePos.x >= pos.x && mousePos.y >= pos.y && mousePos.x < pos.x + asciiCharWidth && mousePos.y < pos.y + lineHeight )
             {
               int symbolIndex = -1;
-              for ( int y = 0; y < kkp.sortableSymbols.size(); y++ )
+              for ( int y = 0; y < (int)kkp.sortableSymbols.size(); y++ )
               {
                 if ( kkp.sortableSymbols[ y ].originalSymbolID == byte.symbol && byte.symbol >= 0 )
                 {
@@ -586,8 +586,8 @@ void DrawHexView()
               bool top = bytePos < bytesPerRow || kkp.bytes[ bytePos - bytesPerRow ].symbol != hexHighlightSymbol;
               bool left = !( bytePos % bytesPerRow ) || ( bytePos && kkp.bytes[ bytePos - 1 ].symbol != hexHighlightSymbol );
               int bottomTarget = bytePos + bytesPerRow + 1;
-              bool bottom = ( bytePos > kkp.bytes.size() - bytesPerRow - 1 ) || ( bottomTarget < kkp.bytes.size() && kkp.bytes[ bottomTarget ].symbol != hexHighlightSymbol );
-              bool right = ( bytePos % bytesPerRow == bytesPerRow - 1 ) || bytePos == kkp.bytes.size() - 1 || ( bytePos < kkp.bytes.size() - 1 && kkp.bytes[ bytePos + 1 ].symbol != hexHighlightSymbol );
+              bool bottom = ( bytePos > ( int )kkp.bytes.size() - bytesPerRow - 1 ) || ( bottomTarget < (int)kkp.bytes.size() && kkp.bytes[ bottomTarget ].symbol != hexHighlightSymbol );
+              bool right = ( bytePos % bytesPerRow == bytesPerRow - 1 ) || bytePos == kkp.bytes.size() - 1 || ( bytePos < (int)kkp.bytes.size() - 1 && kkp.bytes[ bytePos + 1 ].symbol != hexHighlightSymbol );
 
               float width = hexCharWidth;
               if ( right )
@@ -664,7 +664,7 @@ void DrawCodeView()
 
   if ( ImGui::BeginPopup( "SourceCodeSelector" ) )
   {
-    for ( int x = 0; x < kkp.files.size(); x++ )
+    for ( int x = 0; x < (int)kkp.files.size(); x++ )
     {
       if ( ImGui::MenuItem( kkp.files[ x ].name.data(), nullptr, nullptr, true ) )
         OpenSourceFile( x );
@@ -708,7 +708,7 @@ void DrawCodeView()
 
         if ( ImGui::IsItemFocused() && selectedSourceLine != line.index )
         {
-          for ( int x = 0; x < kkp.bytes.size(); x++ )
+          for ( int x = 0; x < (int)kkp.bytes.size(); x++ )
           {
             auto& byte = kkp.bytes[ x ];
             if ( byte.line == line.index && byte.file == openedSource )
@@ -790,7 +790,7 @@ void DrawDisassemblyView()
 
     if ( selectedSourceLineChanged )
     {
-      for ( int x = 0; x < disassembly.size(); x++ )
+      for ( int x = 0; x < (int)disassembly.size(); x++ )
       {
         if ( disassembly[ x ].sourceLine == selectedSourceLine )
         {
@@ -826,7 +826,7 @@ void DrawDisassemblyView()
           hexHighlightSource = openedSource;
           hexViewPositionChanged = true;
 
-          for ( int x = 0; x < kkp.bytes.size(); x++ )
+          for ( int x = 0; x < (int)kkp.bytes.size(); x++ )
           {
             auto& byte = kkp.bytes[ x ];
             if ( byte.line == line.address && byte.file == openedSource )
@@ -1065,7 +1065,7 @@ void DrawSymbolList()
     {
       if ( !scopes )
       {
-        for ( int x = 0; x < kkp.sortableSymbols.size(); x++ )
+        for ( int x = 0; x < (int)kkp.sortableSymbols.size(); x++ )
         {
           if ( kkp.sortableSymbols[ x ].originalSymbolID == newlySelectedSymbolID )
           {
