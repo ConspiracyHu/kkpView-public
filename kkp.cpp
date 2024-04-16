@@ -340,10 +340,7 @@ void KKP::Load( const std::string& fileName )
 
       s.originalSymbolID = x;
 
-      if ( s.name == "Code::<arch: x64>" )
-        isX64 = true;
-      else
-        AddSymbol( s );
+      AddSymbol( s );
     }
   }
 
@@ -355,6 +352,31 @@ void KKP::Load( const std::string& fileName )
 
   if ( fread_s( bytes.data(), sourceSize * sizeof( KKPByteData ), sizeof( KKPByteData ), sourceSize, reader ) != sourceSize )
     goto closeFile;
+
+  IMAGE_DOS_HEADER dosHeader;
+  if ( sourceSize >= sizeof( dosHeader ) )
+  {
+    for ( int x = 0; x < sizeof( dosHeader ); x++ )
+      ( (unsigned char*)&dosHeader )[ x ] = bytes[ x ].data;
+
+    if ( dosHeader.e_magic == IMAGE_DOS_SIGNATURE )
+    {
+      IMAGE_NT_HEADERS peHeader;
+      if ( sourceSize >= sizeof( peHeader ) + dosHeader.e_lfanew )
+      {
+        for ( int x = 0; x < sizeof( peHeader ); x++ )
+          ( (unsigned char*)&peHeader )[ x ] = bytes[ x + dosHeader.e_lfanew ].data;
+
+        if ( peHeader.Signature == IMAGE_NT_SIGNATURE )
+        {
+          if ( peHeader.FileHeader.Machine == IMAGE_FILE_MACHINE_AMD64 )
+            isX64 = true;
+        }
+
+      }
+    }
+  }
+
 
 closeFile:
   fclose( reader );
