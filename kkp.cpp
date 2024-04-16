@@ -266,8 +266,11 @@ void BuildSymbolList( std::vector<KKP::KKPSymbol>& target, const KKP::KKPSymbol&
   }
 }
 
+bool KKP::isX64 = false;
+
 void KKP::Load( const std::string& fileName )
 {
+  isX64 = false;
   root = KKPSymbol();
   files.clear();
   bytes.clear();
@@ -337,7 +340,10 @@ void KKP::Load( const std::string& fileName )
 
       s.originalSymbolID = x;
 
-      AddSymbol( s );
+      if ( s.name == "Code::<arch: x64>" )
+        isX64 = true;
+      else
+        AddSymbol( s );
     }
   }
 

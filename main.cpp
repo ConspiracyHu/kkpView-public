@@ -350,7 +350,7 @@ void SelectByte( KKP::KKPByteData& byte )
 
       ZyanUSize offset = 0;
       ZydisDisassembledInstruction instruction;
-      while ( ZYAN_SUCCESS( ZydisDisassembleIntel( ZYDIS_MACHINE_MODE_LONG_COMPAT_32, address, data + offset, symbol.unpackedSize - offset, &instruction ) ) )
+      while ( ZYAN_SUCCESS( ZydisDisassembleIntel( KKP::isX64 ? ZYDIS_MACHINE_MODE_LONG_64 : ZYDIS_MACHINE_MODE_LONG_COMPAT_32, address, data + offset, symbol.unpackedSize - offset, &instruction ) ) )
       {
         DisassemblyLine line;
         line.address = (int)address;

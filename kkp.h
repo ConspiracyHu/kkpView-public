@@ -6,6 +6,8 @@ class KKP
 {
 public:
 
+  static bool isX64;
+
 #pragma pack(push)
 #pragma pack(1)
   struct KKPFile

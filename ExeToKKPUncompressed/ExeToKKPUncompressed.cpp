@@ -93,8 +93,8 @@ BOOL CALLBACK EnumSymbols(SYMBOL_INFO* info, ULONG size, void* param)
   sym.name = info->Name;
   sym.fileID = 0;
   sym.VA = info->Address;
-  sym.size = info->Size;
-  sym.isCode = false;
+  sym.size = size ? size : info->Size;
+  sym.isCode = info->Tag == SymTagFunction;
 
 /*
   if ( sym.size == 0 )
@@ -151,8 +151,6 @@ BOOL CALLBACK EnumSymbols(SYMBOL_INFO* info, ULONG size, void* param)
 
   sym.fileID = -1;
 
-  IMAGEHLP_LINE64 LineInfo;
-  LineInfo.SizeOfStruct = sizeof( IMAGEHLP_LINE64 );
   symbols.emplace_back( sym );
 
   return TRUE;
