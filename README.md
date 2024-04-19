@@ -38,7 +38,7 @@ Sc times:
 	4 bytes: unpacked size of symbol in bytes
 	1 byte: boolean to tell if symbol is code (true if yes)
 	4 bytes: source code file ID
-	4 bytes: source code line ID
+	4 bytes: symbol position in executable
 
 // binary compression data:
 Ds times: (for each byte of the described binary)
