@@ -1,15 +1,17 @@
-#include "imgui.h"
-#include "backends/imgui_impl_win32.h"
-#include "backends/imgui_impl_dx11.h"
-#include <tchar.h>
-#include "kkp.h"
+#define __STDC_WANT_LIB_EXT1__ /* fopen_s, fread_s, etc. */
+
 #include <unordered_map>
+#include <math.h>
+
+#include "imgui.h"
+#include "kkp.h"
 #include "profont.h"
-#include "window.h"
 #include "version.h"
+#include "main.h"
+#include "platform.h"
 
 #define ZYDIS_STATIC_BUILD
-#include "Zydis/include/Zydis/Zydis.h"
+#include "zydis/include/Zydis/Zydis.h"
 
 
 bool darkColors = true;
@@ -61,7 +63,7 @@ ImU32 GetCrinklerRatioColor(double ratio)
 
 ImU32 GetCompressionColorGradient( int t )
 {
-  float tval = max( 0, min( 1, ( t / 9.0f ) ) );
+  float tval = std::max( 0.0f, std::min( 1.0f, ( t / 9.0f ) ) );
 
   tval = powf( tval, 1.5f );
 
@@ -387,7 +389,7 @@ void DrawHexView()
 
   float groupWidth = hexCharWidth * bytesPerGroup + groupSpacing + asciiCharWidth * bytesPerGroup;
 
-  int groupsPerRow = (int)max( 1, windowWidth / groupWidth );
+  int groupsPerRow = (int)std::max( 1.0f, windowWidth / groupWidth );
   int bytesPerRow = bytesPerGroup * groupsPerRow;
 
   ImVec2 mousePos = ImGui::GetIO().MousePos;
@@ -418,8 +420,8 @@ void DrawHexView()
 
     while ( clipper.Step() )
     {
-      int startByte = (int)min( clipper.DisplayStart * bytesPerRow, (int)kkp.bytes.size() );
-      int endByte = (int)min( clipper.DisplayEnd * bytesPerRow, (int)kkp.bytes.size() );
+      int startByte = (int)std::min( clipper.DisplayStart * bytesPerRow, (int)kkp.bytes.size() );
+      int endByte = (int)std::min( clipper.DisplayEnd * bytesPerRow, (int)kkp.bytes.size() );
 
       for ( int i = startByte; i < endByte; i++ )
       {
@@ -526,7 +528,7 @@ void DrawHexView()
             }
 
             char hex[ 4 ];
-            sprintf_s( hex, "%02X ", byte.data );
+            sprintf_s( hex, 4, "%02X ", byte.data );
             ImGui::GetWindowDrawList()->AddText( pos, GetRatioColor( byte.packed ), hex, hex + 3 );
             pos.x += hexCharWidth;
             if ( x % bytesPerGroup == bytesPerGroup - 1 )
@@ -633,21 +635,15 @@ void DrawCodeView()
     ImGui::SameLine();
     if ( ImGui::SmallButton( "Browse to file" ) )
     {
-      char filepath[ 256 ] = { 0 };
+      file_dialog_filter flt[2] = {
+        { "C++ files", "*.cpp" },
+        { "C files", "*.c" },
+      };
+      std::string filepath = platform_open_file_dialog("Choose C/C++ source to read...", 2, flt, NULL);
 
-      OPENFILENAMEA opf = { 0 };
-      opf.lpstrFilter = "C++ files\0*.cpp\0\0";
-      opf.lpstrFile = filepath;
-      opf.nMaxFile = 256;
-      opf.nMaxFileTitle = 50;
-      opf.lpstrDefExt = "cpp";
-      opf.Flags = ( OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NONETWORKBUTTON ) & ~OFN_ALLOWMULTISELECT;
-      opf.lStructSize = sizeof( OPENFILENAME );
-      opf.hInstance = GetModuleHandle( 0 );
-
-      if ( GetOpenFileNameA( &opf ) )
+      if (!filepath.empty())
       {
-        size_t filepathlen = strlen( filepath );
+        size_t filepathlen = filepath.size();
         for ( size_t i = source.length(), j = filepathlen; i >= 0 && j >= 0; i--, j-- )
         {
           if ( source[ i ] != filepath[ j ] )
@@ -699,7 +695,7 @@ void DrawCodeView()
         ImGui::TableSetColumnIndex( 0 );
 
         char indexText[ 10 ]{};
-        sprintf_s( indexText, "%d", line.index );
+        sprintf_s( indexText, 10, "%d", line.index );
 
         ImGuiSelectableFlags selectableFlags = ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap;
         if ( ImGui::Selectable( indexText, line.index == selectedSourceLine, selectableFlags ) )
@@ -811,7 +807,7 @@ void DrawDisassemblyView()
         ImGui::TableSetColumnIndex( 0 );
 
         char indexText[ 10 ]{};
-        sprintf_s( indexText, "0x%x", line.address );
+        sprintf_s( indexText, 10, "0x%x", line.address );
 
         ImGuiSelectableFlags selectableFlags = ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap;
         if ( ImGui::Selectable( indexText, line.sourceLine == selectedSourceLine, selectableFlags ) )
@@ -907,7 +903,7 @@ void ProcessSymbolClick( KKP::KKPSymbol& symbol )
   {
     if ( !symbol.children.size() )
     {
-      auto& byte = kkp.bytes[ max( 0, min( kkp.bytes.size() - 1, symbol.sourcePos ) ) ];
+      auto& byte = kkp.bytes[ std::max( 0ul, std::min( static_cast<size_t>(kkp.bytes.size()) - 1, static_cast<size_t>(symbol.sourcePos) ) ) ];
 
       SelectByte( byte );
 
@@ -1139,189 +1135,100 @@ void LoadFile( const char* filePath )
   }
 }
 
-INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ INT nCmdShow )
+void InitStuff(int argc, char** argv)
 {
-  //ImGui_ImplWin32_EnableDpiAwareness();
-  WNDCLASSEXW wc = { sizeof( wc ), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle( nullptr ), nullptr, nullptr, nullptr, nullptr, L"ImGui Example", nullptr };
-  ::RegisterClassExW( &wc );
-  HWND hwnd = ::CreateWindowW( wc.lpszClassName, L"Conspiracy KKP Analyzer " VERSION, WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, nullptr, nullptr, wc.hInstance, nullptr );
-
-  if ( !CreateDeviceD3D( hwnd ) )
-  {
-    CleanupDeviceD3D();
-    ::UnregisterClassW( wc.lpszClassName, wc.hInstance );
-    return 1;
-  }
-
-  ::ShowWindow( hwnd, SW_SHOWMAXIMIZED );
-  ::UpdateWindow( hwnd );
-  DragAcceptFiles( hwnd, TRUE );
-
-  IMGUI_CHECKVERSION();
-  ImGui::CreateContext();
-  ImGuiIO& io = ImGui::GetIO(); (void)io;
-  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-
-  ImGui::StyleColorsDark();
-  //ImGui::StyleColorsLight();
-
-  ImGui_ImplWin32_Init( hwnd );
-  ImGui_ImplDX11_Init( g_pd3dDevice, g_pd3dDeviceContext );
-
   auto profont = ImGui::GetIO().Fonts->AddFontFromMemoryCompressedTTF( profont_compressed_data, profont_compressed_size, 11.0f );
   //io.Fonts->AddFontFromFileTTF("ProfontPixelated.ttf", 11.0f);
 
-  ImVec4 clear_color = ImVec4( 0, 0, 0, 1.00f );
-
-  int rtWidth = 0;
-  int rtHeight = 0;
-
-  for ( int i = 1; i < __argc; i++ )
+  for ( int i = 1; i < argc; i++ )
   {
-    LoadFile( __argv[ i ] );
+    LoadFile( argv[ i ] );
   }
 
   ImGui::PushStyleVar( ImGuiStyleVar_WindowPadding, ImVec2( 0, 0 ) );
+}
 
-  bool done = false;
-  while ( !done )
+void RenderFrame(int rtWidth, int rtHeight)
+{
+  ImGui::NewFrame();
+  ImVec2 mousePos = ImGui::GetIO().MousePos;
+
+  ImGui::BeginMainMenuBar();
+  ImVec2 menuSize = ImGui::GetWindowSize();
+
+  if ( ImGui::BeginMenu( "File", true ) )
   {
-    MSG msg;
-    while ( ::PeekMessage( &msg, nullptr, 0U, 0U, PM_REMOVE ) )
+    if ( ImGui::MenuItem( "Open kkp file", nullptr, nullptr, true ) )
     {
-      ::TranslateMessage( &msg );
-      ::DispatchMessage( &msg );
-      if ( msg.message == WM_DROPFILES )
-      {
-        HDROP drop = (HDROP)msg.wParam;
-        int count = DragQueryFileA( drop, -1, nullptr, 0 );
-        for ( int i = 0; i < count; i++ )
-        {
-          char sz[ MAX_PATH ] = { 0 };
-          DragQueryFileA( drop, i, sz, MAX_PATH );
-          LoadFile( sz );
-        }
-        DragFinish( drop );
-      }
-      if ( msg.message == WM_QUIT )
-      {
-        done = true;
-      }
+      OpenKKP();
+      openedSource = -1;
+      sourceCode.clear();
     }
-    if ( done )
+    if ( ImGui::MenuItem( "Open sym file", nullptr, nullptr, true ) )
+      OpenSYM();
+
+    if ( ImGui::MenuItem( "Toggle color scheme", nullptr, nullptr, true ) )
     {
-      break;
+      darkColors = !darkColors;
+      if ( darkColors )
+        ImGui::StyleColorsDark();
+      else
+        ImGui::StyleColorsLight();
     }
 
-    if ( g_ResizeWidth != 0 && g_ResizeHeight != 0 )
-    {
-      CleanupRenderTarget();
-      g_pSwapChain->ResizeBuffers( 0, g_ResizeWidth, g_ResizeHeight, DXGI_FORMAT_UNKNOWN, 0 );
-      rtWidth = g_ResizeWidth;
-      rtHeight = g_ResizeHeight;
-      g_ResizeWidth = g_ResizeHeight = 0;
-      CreateRenderTarget();
-    }
-
-    ImGui_ImplDX11_NewFrame();
-    ImGui_ImplWin32_NewFrame();
-    ImGui::NewFrame();
-    ImVec2 mousePos = ImGui::GetIO().MousePos;
-
-    ImGui::BeginMainMenuBar();
-    ImVec2 menuSize = ImGui::GetWindowSize();
-
-    if ( ImGui::BeginMenu( "File", true ) )
-    {
-      if ( ImGui::MenuItem( "Open kkp file", nullptr, nullptr, true ) )
-      {
-        OpenKKP();
-        openedSource = -1;
-        sourceCode.clear();
-      }
-      if ( ImGui::MenuItem( "Open sym file", nullptr, nullptr, true ) )
-        OpenSYM();
-      
-      if ( ImGui::MenuItem( "Toggle color scheme", nullptr, nullptr, true ) )
-      {
-        darkColors = !darkColors;
-        if ( darkColors )
-          ImGui::StyleColorsDark();
-        else
-          ImGui::StyleColorsLight();
-      }
-
-      ImGui::EndMenu();
-    }
-
-    ImGui::EndMainMenuBar();
-
-    static float f = 0.0f;
-    static int counter = 0;
-
-    ImGui::GetStyle().WindowRounding = 0.0f;
-    ImGui::SetNextWindowPos( ImVec2( 0, menuSize.y ) );
-    ImGui::SetNextWindowSize( ImVec2( (float)rtWidth, (float)( rtHeight - menuSize.y ) ) );
-
-    ImGui::Begin( "kkpView", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar );
-
-    ImVec2 windowSize = ImGui::GetContentRegionAvail();
-
-    const float hSplitterPos = 0.5f;
-    const float vSplitterPos = 0.5f;
-    const float verticalSplitPixelPos = windowSize.x * vSplitterPos;
-    const float horizontalSplitPixelPos = ( windowSize.y * hSplitterPos );
-    const float codeSplitterPos = 0.75f;
-
-    ImGui::BeginChild( "left side", ImVec2( verticalSplitPixelPos, -1 ), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX );
-    {
-      // Upper part of the left area
-      ImGui::BeginChild( "Hex View", ImVec2( -1, horizontalSplitPixelPos ), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY );
-      DrawHexView();
-      ImGui::EndChild();
-
-      // Lower part of the left area
-      ImGui::BeginChild( "Code View", ImVec2( -1, -1 ), ImGuiChildFlags_None );
-      {
-        windowSize = ImGui::GetContentRegionAvail();
-        const float codeSplitPixelPos = windowSize.x * codeSplitterPos;
-        ImGui::BeginChild( "left side", ImVec2( codeSplitPixelPos, -1 ), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX );
-        {
-          DrawCodeView();
-          ImGui::EndChild();
-          ImGui::SameLine();
-          DrawDisassemblyView();
-        }
-        ImGui::EndChild();
-      }
-    }
-    ImGui::EndChild();
-
-    ImGui::SameLine();
-
-    ImGui::BeginChild( "Symbol List", ImVec2( -1, -1 ), ImGuiChildFlags_None );
-    DrawSymbolList();
-    ImGui::EndChild();
-
-    ImGui::End();
-
-    ImGui::Render();
-    const float clear_color_with_alpha[ 4 ] = { clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w };
-    g_pd3dDeviceContext->OMSetRenderTargets( 1, &g_mainRenderTargetView, nullptr );
-    g_pd3dDeviceContext->ClearRenderTargetView( g_mainRenderTargetView, clear_color_with_alpha );
-    ImGui_ImplDX11_RenderDrawData( ImGui::GetDrawData() );
-
-    g_pSwapChain->Present( 1, 0 );
+    ImGui::EndMenu();
   }
 
-  // Cleanup
-  ImGui_ImplDX11_Shutdown();
-  ImGui_ImplWin32_Shutdown();
-  ImGui::DestroyContext();
+  ImGui::EndMainMenuBar();
 
-  CleanupDeviceD3D();
-  ::DestroyWindow( hwnd );
-  ::UnregisterClassW( wc.lpszClassName, wc.hInstance );
+  static float f = 0.0f;
+  static int counter = 0;
 
-  return 0;
+  ImGui::GetStyle().WindowRounding = 0.0f;
+  ImGui::SetNextWindowPos( ImVec2( 0, menuSize.y ) );
+  ImGui::SetNextWindowSize( ImVec2( (float)rtWidth, (float)( rtHeight - menuSize.y ) ) );
+
+  ImGui::Begin( "kkpView", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar );
+
+  ImVec2 windowSize = ImGui::GetContentRegionAvail();
+
+  const float hSplitterPos = 0.5f;
+  const float vSplitterPos = 0.5f;
+  const float verticalSplitPixelPos = windowSize.x * vSplitterPos;
+  const float horizontalSplitPixelPos = ( windowSize.y * hSplitterPos );
+  const float codeSplitterPos = 0.75f;
+
+  ImGui::BeginChild( "left side", ImVec2( verticalSplitPixelPos, -1 ), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX );
+  {
+    // Upper part of the left area
+    ImGui::BeginChild( "Hex View", ImVec2( -1, horizontalSplitPixelPos ), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeY );
+    DrawHexView();
+    ImGui::EndChild();
+
+    // Lower part of the left area
+    ImGui::BeginChild( "Code View", ImVec2( -1, -1 ), ImGuiChildFlags_None );
+    {
+      windowSize = ImGui::GetContentRegionAvail();
+      const float codeSplitPixelPos = windowSize.x * codeSplitterPos;
+      ImGui::BeginChild( "left side", ImVec2( codeSplitPixelPos, -1 ), ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX );
+      {
+        DrawCodeView();
+        ImGui::EndChild();
+        ImGui::SameLine();
+        DrawDisassemblyView();
+      }
+      ImGui::EndChild();
+    }
+  }
+  ImGui::EndChild();
+
+  ImGui::SameLine();
+
+  ImGui::BeginChild( "Symbol List", ImVec2( -1, -1 ), ImGuiChildFlags_None );
+  DrawSymbolList();
+  ImGui::EndChild();
+
+  ImGui::End();
+
+  ImGui::Render();
 }
