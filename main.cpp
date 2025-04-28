@@ -624,7 +624,7 @@ void DrawHexView()
 void DrawCodeView()
 {
   std::string source = "Source Files";
-  if ( openedSource >= 0 )
+  if ( openedSource >= 0 && kkp.files.size() > openedSource && !kkp.files[ openedSource ].name.empty() )
     source = kkp.files[ openedSource ].name;
 
   if ( ImGui::SmallButton( source.data() ) )
@@ -775,7 +775,7 @@ void DrawDisassemblyView()
 
     ImGui::TableHeadersRow();
 
-    if ( openedSource < 0 || !kkp.files[ openedSource ].name.size() )
+    if ( openedSource < 0 || openedSource >= kkp.files.size() || !kkp.files[ openedSource ].name.size() )
     {
       ImGui::EndTable();
       return;
