@@ -2,70 +2,79 @@
 #include <tchar.h>
 #include <windows.h>
 #include <d3d11.h>
+#include <vector>
 
 #include "imgui.h"
 #include "backends/imgui_impl_win32.h"
 #include "backends/imgui_impl_dx11.h"
 
-#include "main.h"
-#include "platform.h"
+#include "../main.h"
+#include "../platform.h"
+#include "../version.h"
 
 
-std::string platform_open_file_dialog(const char* title, int nfilters, const file_dialog_filter* filters, const char* def_out)
+std::string platform_open_file_dialog( const char* title, int nfilters, const file_dialog_filter* filters, const char* def_out )
 {
   std::string retval;
   std::string built_filter;
 
-  if (nfilters < 0)
+  if ( nfilters < 0 )
     return retval;
 
-  for (int i = 0; i < nfilters; ++i)
+  std::vector<char> filterBuf;
+  for ( int i = 0; i < nfilters; ++i )
   {
-    built_filter += filters[i].title;
-    built_filter += "\0";
-    built_filter += filters[i].pattern;
-    built_filter += "\0";
+    const char* nm = filters[ i ].name ? filters[ i ].name : "";
+    const char* pat = filters[ i ].pattern ? filters[ i ].pattern : "";
+
+    while ( *nm )
+      filterBuf.push_back( *nm++ );
+    filterBuf.push_back( '\0' );
+
+    while ( *pat )
+      filterBuf.push_back( *pat++ );
+    filterBuf.push_back( '\0' );
   }
-  built_filter += "\0";
+  // final extra NUL
+  filterBuf.push_back( '\0' );
 
   char dir[ 1024 ];
   if ( !GetCurrentDirectoryA( 1024, dir ) )
     memset( dir, 0, sizeof( char ) * 1024 );
 
-  char Filestring[ 256 ];
+  //char Filestring[ 256 ];
 
-  OPENFILENAMEA opf;
-  opf.hwndOwner = 0;
-  opf.lpstrFilter = built_filter.c_str();
-  opf.lpstrCustomFilter = 0;
-  opf.nMaxCustFilter = 0L;
-  opf.nFilterIndex = 1L;
-  opf.lpstrFile = Filestring;
-  opf.lpstrFile[ 0 ] = '\0';
-  opf.nMaxFile = 256;
-  opf.lpstrFileTitle = 0;
-  opf.nMaxFileTitle = 50;
-  opf.lpstrInitialDir = def_out;
-  opf.lpstrTitle = title;
-  opf.nFileOffset = 0;
-  opf.nFileExtension = 0;
-  opf.lpstrDefExt = (nfilters < 1) ? NULL : (filters[0].pattern + 2);
-  opf.lpfnHook = NULL;
-  opf.lCustData = 0;
-  opf.Flags = ( OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NONETWORKBUTTON ) & ~OFN_ALLOWMULTISELECT;
-  opf.lStructSize = sizeof( OPENFILENAME );
+  char fileName[ 256 ] = { 0 };
+  OPENFILENAMEA ofn = {};
+  ofn.lStructSize = sizeof( ofn );
+  ofn.hwndOwner = nullptr;
+  ofn.lpstrFilter = filterBuf.data();
+  ofn.nFilterIndex = 1;
+  ofn.lpstrFile = fileName;
+  ofn.nMaxFile = sizeof( fileName );
+  ofn.lpstrInitialDir = def_out;
+  ofn.lpstrTitle = title;
+  ofn.Flags = OFN_FILEMUSTEXIST
+    | OFN_HIDEREADONLY
+    | OFN_NONETWORKBUTTON;
 
-  opf.hInstance = GetModuleHandle( 0 );
-  opf.pvReserved = NULL;
-  opf.dwReserved = 0;
-  opf.FlagsEx = 0;
-
-  if ( GetOpenFileNameA( &opf ) )
+  if ( GetOpenFileNameA( &ofn ) )
   {
-    SetCurrentDirectoryA( dir );
-    retval = opf.lpstrFile;
+    // convert to full absolute path
+    char fullPath[ MAX_PATH ] = { 0 };
+    DWORD len = GetFullPathNameA( fileName,
+                                  MAX_PATH,
+                                  fullPath,
+                                  nullptr );
+    if ( len > 0 && len < MAX_PATH )
+    {
+      retval = fullPath;
+    }
+    else
+    {
+      retval = fileName;
+    }
   }
-
   SetCurrentDirectoryA( dir );
 
   return retval;
@@ -90,7 +99,7 @@ INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
   //ImGui_ImplWin32_EnableDpiAwareness();
   WNDCLASSEXW wc = { sizeof( wc ), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle( nullptr ), nullptr, nullptr, nullptr, nullptr, L"ImGui Example", nullptr };
   ::RegisterClassExW( &wc );
-  HWND hwnd = ::CreateWindowW( wc.lpszClassName, L"Conspiracy KKP Analyzer " VERSION, WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, nullptr, nullptr, wc.hInstance, nullptr );
+  HWND hwnd = CreateWindowW( wc.lpszClassName, L"Conspiracy KKP Analyzer " VERSION, WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, nullptr, nullptr, wc.hInstance, nullptr );
 
   if ( !CreateDeviceD3D( hwnd ) )
   {
@@ -114,7 +123,7 @@ INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
   ImGui_ImplWin32_Init( hwnd );
   ImGui_ImplDX11_Init( g_pd3dDevice, g_pd3dDeviceContext );
 
-  InitStuff(__argc, __argv);
+  InitStuff( __argc, __argv );
 
   ImVec4 clear_color = ImVec4( 0, 0, 0, 1.00f );
 
@@ -164,7 +173,7 @@ INT WINAPI WinMain( _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, 
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
 
-    RenderFrame();
+    RenderFrame( rtWidth, rtHeight );
 
     const float clear_color_with_alpha[ 4 ] = { clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w };
     g_pd3dDeviceContext->OMSetRenderTargets( 1, &g_mainRenderTargetView, nullptr );

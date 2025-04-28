@@ -32,33 +32,33 @@ ImU32 heatMap[]
     0xffff0000, // 1000000.0
 };
 
-ImU32 GetCrinklerRatioColor(double ratio)
+ImU32 GetCrinklerRatioColor( double ratio )
 {
-    if (ratio == 0 || isinf(ratio) || isnan(ratio))
-        return 0xff808080;
+  if ( ratio == 0 || isinf( ratio ) || isnan( ratio ) )
+    return 0xff808080;
 
-    double bits = ratio * 8;
-    if (bits < 0.1)
-        return heatMap[1];
-    if (bits < 0.5)
-        return heatMap[2];
-    if (bits < 1)
-        return heatMap[3];
-    if (bits < 2)
-        return heatMap[4];
-    if (bits < 3)
-        return heatMap[5];
-    if (bits < 5)
-        return heatMap[6];
-    if (bits < 7)
-        return heatMap[7];
-    if (bits < 9)
-        return heatMap[8];
-    if (bits < 12)
-        return heatMap[9];
-    if (bits <= 16)
-        return heatMap[10];
-    return heatMap[10];
+  double bits = ratio * 8;
+  if ( bits < 0.1 )
+    return heatMap[ 1 ];
+  if ( bits < 0.5 )
+    return heatMap[ 2 ];
+  if ( bits < 1 )
+    return heatMap[ 3 ];
+  if ( bits < 2 )
+    return heatMap[ 4 ];
+  if ( bits < 3 )
+    return heatMap[ 5 ];
+  if ( bits < 5 )
+    return heatMap[ 6 ];
+  if ( bits < 7 )
+    return heatMap[ 7 ];
+  if ( bits < 9 )
+    return heatMap[ 8 ];
+  if ( bits < 12 )
+    return heatMap[ 9 ];
+  if ( bits <= 16 )
+    return heatMap[ 10 ];
+  return heatMap[ 10 ];
 }
 
 ImU32 GetCompressionColorGradient( int t )
@@ -481,7 +481,7 @@ void DrawHexView()
               bool top = bytePos < bytesPerRow || kkp.bytes[ bytePos - bytesPerRow ].symbol != hexHighlightSymbol;
               bool left = !( bytePos % bytesPerRow ) || ( bytePos && kkp.bytes[ bytePos - 1 ].symbol != hexHighlightSymbol );
               int bottomTarget = bytePos + bytesPerRow + 1;
-              bool bottom = ( bytePos > ( int )kkp.bytes.size() - bytesPerRow - 2 ) || ( bottomTarget < (int)kkp.bytes.size() && kkp.bytes[ bottomTarget ].symbol != hexHighlightSymbol );
+              bool bottom = ( bytePos > (int)kkp.bytes.size() - bytesPerRow - 2 ) || ( bottomTarget < (int)kkp.bytes.size() && kkp.bytes[ bottomTarget ].symbol != hexHighlightSymbol );
               bool right = ( bytePos % bytesPerRow == bytesPerRow - 1 ) || bytePos == kkp.bytes.size() - 1 || ( bytePos < (int)kkp.bytes.size() - 1 && kkp.bytes[ bytePos + 1 ].symbol != hexHighlightSymbol );
 
               float w = hexCharWidth;
@@ -588,7 +588,7 @@ void DrawHexView()
               bool top = bytePos < bytesPerRow || kkp.bytes[ bytePos - bytesPerRow ].symbol != hexHighlightSymbol;
               bool left = !( bytePos % bytesPerRow ) || ( bytePos && kkp.bytes[ bytePos - 1 ].symbol != hexHighlightSymbol );
               int bottomTarget = bytePos + bytesPerRow + 1;
-              bool bottom = ( bytePos > ( int )kkp.bytes.size() - bytesPerRow - 1 ) || ( bottomTarget < (int)kkp.bytes.size() && kkp.bytes[ bottomTarget ].symbol != hexHighlightSymbol );
+              bool bottom = ( bytePos > (int)kkp.bytes.size() - bytesPerRow - 1 ) || ( bottomTarget < (int)kkp.bytes.size() && kkp.bytes[ bottomTarget ].symbol != hexHighlightSymbol );
               bool right = ( bytePos % bytesPerRow == bytesPerRow - 1 ) || bytePos == kkp.bytes.size() - 1 || ( bytePos < (int)kkp.bytes.size() - 1 && kkp.bytes[ bytePos + 1 ].symbol != hexHighlightSymbol );
 
               float width = hexCharWidth;
@@ -635,13 +635,13 @@ void DrawCodeView()
     ImGui::SameLine();
     if ( ImGui::SmallButton( "Browse to file" ) )
     {
-      file_dialog_filter flt[2] = {
+      file_dialog_filter flt[ 2 ] = {
         { "C++ files", "*.cpp" },
         { "C files", "*.c" },
       };
-      std::string filepath = platform_open_file_dialog("Choose C/C++ source to read...", 2, flt, NULL);
+      std::string filepath = platform_open_file_dialog( "Choose C/C++ source to read...", 2, flt, NULL );
 
-      if (!filepath.empty())
+      if ( !filepath.empty() )
       {
         size_t filepathlen = filepath.size();
         for ( size_t i = source.length(), j = filepathlen; i >= 0 && j >= 0; i--, j-- )
@@ -903,7 +903,7 @@ void ProcessSymbolClick( KKP::KKPSymbol& symbol )
   {
     if ( !symbol.children.size() )
     {
-      auto& byte = kkp.bytes[ std::max( 0ul, std::min( static_cast<size_t>(kkp.bytes.size()) - 1, static_cast<size_t>(symbol.sourcePos) ) ) ];
+      auto& byte = kkp.bytes[ std::max( size_t( 0 ), std::min( static_cast<size_t>( kkp.bytes.size() ) - 1, static_cast<size_t>( symbol.sourcePos ) ) ) ];
 
       SelectByte( byte );
 
@@ -964,7 +964,7 @@ void AddSymbolRecursive( KKP::KKPSymbol& node, const ImVec2& tableTopLeft, int& 
   {
     if ( !child.children.size() )
     {
-      if (!foldersOnTop )
+      if ( !foldersOnTop )
         AddNonFolder( child, tableTopLeft, rowIndex, windowSize, rowHeight, scroll );
       continue;
     }
@@ -1119,7 +1119,7 @@ void DrawSymbolList()
 
 void LoadFile( const char* filePath )
 {
-  const char * ext = strrchr( filePath, '.' );
+  const char* ext = strrchr( filePath, '.' );
   if ( !ext )
   {
     return;
@@ -1135,7 +1135,7 @@ void LoadFile( const char* filePath )
   }
 }
 
-void InitStuff(int argc, char** argv)
+void InitStuff( int argc, char** argv )
 {
   auto profont = ImGui::GetIO().Fonts->AddFontFromMemoryCompressedTTF( profont_compressed_data, profont_compressed_size, 11.0f );
   //io.Fonts->AddFontFromFileTTF("ProfontPixelated.ttf", 11.0f);
@@ -1148,7 +1148,7 @@ void InitStuff(int argc, char** argv)
   ImGui::PushStyleVar( ImGuiStyleVar_WindowPadding, ImVec2( 0, 0 ) );
 }
 
-void RenderFrame(int rtWidth, int rtHeight)
+void RenderFrame( int rtWidth, int rtHeight )
 {
   ImGui::NewFrame();
   ImVec2 mousePos = ImGui::GetIO().MousePos;

@@ -15,19 +15,19 @@ KKP kkp;
 void OpenKKP()
 {
   static const file_dialog_filter flt = { "KKrunchy pack info files", "*.kkp" };
-  std::string r = platform_open_file_dialog("Open KKP", 1, &flt, "Data");
+  std::string r = platform_open_file_dialog( "Open KKP", 1, &flt, "Data" );
 
-  if (!r.empty())
-    kkp.Load(r);
+  if ( !r.empty() )
+    kkp.Load( r );
 }
 
 void OpenSYM()
 {
   static const file_dialog_filter flt = { "Symbol map files", "*.sym" };
-  std::string r = platform_open_file_dialog("Open SYM", 1, &flt, "Data");
+  std::string r = platform_open_file_dialog( "Open SYM", 1, &flt, "Data" );
 
-  if (!r.empty())
-    kkp.LoadSym(r);
+  if ( !r.empty() )
+    kkp.LoadSym( r );
 }
 
 std::string ReadASCIIZ( FILE* f )
@@ -147,7 +147,7 @@ void SortNode( KKP::KKPSymbol& symbol, int sortColumn, bool descending )
 
 void KKP::Sort( int sortColumn, bool descending )
 {
-  SortNode(root, sortColumn, descending);
+  SortNode( root, sortColumn, descending );
 
   switch ( sortColumn )
   {
@@ -207,7 +207,7 @@ void BuildSymbolList( std::vector<KKP::KKPSymbol>& target, const KKP::KKPSymbol&
 bool KKP::isX64 = false;
 
 
-void KKP::Check64Bit(int sourceSize)
+void KKP::Check64Bit( int sourceSize )
 {
   IMAGE_DOS_HEADER dosHeader;
 
@@ -219,7 +219,7 @@ void KKP::Check64Bit(int sourceSize)
     if ( dosHeader.e_magic == IMAGE_DOS_SIGNATURE )
     {
       IMAGE_NT_HEADERS peHeader;
-      if ( sourceSize >= sizeof( peHeader ) + dosHeader.e_lfanew )
+      if ( (unsigned int)sourceSize >= sizeof( peHeader ) + dosHeader.e_lfanew )
       {
         for ( int x = 0; x < sizeof( peHeader ); x++ )
           ( (unsigned char*)&peHeader )[ x ] = bytes[ x + dosHeader.e_lfanew ].data;
@@ -238,14 +238,14 @@ void KKP::Check64Bit(int sourceSize)
   }
 
   Elf32_Ehdr ehdr;
-  if (sourceSize >= sizeof(ehdr))
+  if ( sourceSize >= sizeof( ehdr ) )
   {
-    for (int x = 0; x < sizeof(ehdr); ++x)
-      ((uint8_t*)&ehdr)[x] = bytes[x].data;
+    for ( int x = 0; x < sizeof( ehdr ); ++x )
+      ( (uint8_t*)&ehdr )[ x ] = bytes[ x ].data;
 
-    if (!memcmp(ehdr.e_ident, ELFMAG, SELFMAG))
+    if ( !memcmp( ehdr.e_ident, ELFMAG, SELFMAG ) )
     {
-      if (ehdr.e_machine == EM_X86_64)
+      if ( ehdr.e_machine == EM_X86_64 )
       {
         isX64 = true;
         return;
@@ -266,13 +266,13 @@ void KKP::Load( const std::string& fileName )
     return;
 
   int sourceSize = 0;
-  uint8_t fourCC[4] = {0};
+  uint8_t fourCC[ 4 ] = { 0 };
   int fileCount = 0;
 
-  if ( !fread_s(fourCC, 4, 1, 4, reader ) )
+  if ( !fread_s( fourCC, 4, 1, 4, reader ) )
     goto closeFile;
 
-  if (memcmp(fourCC, "46KK", 4))
+  if ( memcmp( fourCC, "KK64", 4 ) )
     goto closeFile;
 
   if ( !fread_s( &sourceSize, 4, 4, 1, reader ) )
@@ -339,7 +339,7 @@ void KKP::Load( const std::string& fileName )
   if ( fread_s( bytes.data(), sourceSize * sizeof( KKPByteData ), sizeof( KKPByteData ), sourceSize, reader ) != sourceSize )
     goto closeFile;
 
-  Check64Bit(sourceSize);
+  Check64Bit( sourceSize );
 
 closeFile:
   fclose( reader );
@@ -355,11 +355,11 @@ void KKP::LoadSym( const std::string& fileName )
   int symbolStart = 0;
   int symbolSize = 0;
 
-  uint8_t fourCC[4] = {0};
-  if (!fread_s(fourCC, 4, 1, 4, reader))
+  uint8_t fourCC[ 4 ] = { 0 };
+  if ( !fread_s( fourCC, 4, 1, 4, reader ) )
     goto closeFile;
 
-  if (memcmp(fourCC, "PXHP", 4))
+  if ( memcmp( fourCC, "PHXP", 4 ) )
     goto closeFile;
 
   {

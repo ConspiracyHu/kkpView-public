@@ -88,9 +88,19 @@ typedef struct _IMAGE_NT_HEADERS {
 #define IMAGE_DOS_SIGNATURE 0x5A4D
 #define IMAGE_NT_SIGNATURE 0x00004550
 
+#define _stricmp strcasecmp
+#define sprintf_s snprintf
+
+int fopen_s( FILE** streamptr,
+             const char* filename, const char* mode );
+size_t fread_s( void* buffer, size_t bufferSize, size_t elementSize,
+                size_t count, FILE* stream );
+
 #else
 
-#include <winnt.h> /* IMAGE_DOS_HEADER, IMAGE_PE_HEADER */
+#define NOMINMAX
+#include <windows.h> /* IMAGE_DOS_HEADER, IMAGE_PE_HEADER */
+#include <algorithm>
 
 /* The ELF file header.  This appears at the start of every ELF file.  */
 
@@ -179,14 +189,3 @@ typedef struct
 
 
 #endif
-
-#ifndef __STDC_LIB_EXT1__
-#define _stricmp strcasecmp
-#define sprintf_s snprintf
-
-int fopen_s(FILE **streamptr,
-    const char *filename, const char *mode);
-size_t fread_s(void *buffer, size_t bufferSize, size_t elementSize,
-    size_t count, FILE *stream);
-#endif
-
