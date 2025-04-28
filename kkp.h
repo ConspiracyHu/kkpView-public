@@ -56,6 +56,9 @@ public:
   void LoadSym( const std::string& fileName );
   void AddSymbol( const KKPSymbol& symbol );
   void Sort( int sortColumn, bool descending );
+
+private:
+  void Check64Bit(int sourceSize);
 };
 
 extern KKP kkp;

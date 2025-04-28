@@ -1,95 +1,33 @@
-#include "kkp.h"
+
+#define __STDC_WANT_LIB_EXT1__ /* fopen_s, fread_s */
+
+#include <math.h>
 #include <stdio.h>
-#include <windows.h>
-#include <tchar.h>
+#include <cstring>
 #include <algorithm>
+
+#include "kkp.h"
+
+#include "platform.h"
 
 KKP kkp;
 
 void OpenKKP()
 {
-  char dir[ 1024 ];
-  if ( !GetCurrentDirectoryA( 1024, dir ) )
-    memset( dir, 0, sizeof( char ) * 1024 );
+  static const file_dialog_filter flt = { "KKrunchy pack info files", "*.kkp" };
+  std::string r = platform_open_file_dialog( "Open KKP", 1, &flt, "Data" );
 
-  char Filestring[ 256 ];
-
-  OPENFILENAMEA opf;
-  opf.hwndOwner = 0;
-  opf.lpstrFilter = "KKrunchy pack info files\0*.kkp\0\0";
-  opf.lpstrCustomFilter = 0;
-  opf.nMaxCustFilter = 0L;
-  opf.nFilterIndex = 1L;
-  opf.lpstrFile = Filestring;
-  opf.lpstrFile[ 0 ] = '\0';
-  opf.nMaxFile = 256;
-  opf.lpstrFileTitle = 0;
-  opf.nMaxFileTitle = 50;
-  opf.lpstrInitialDir = "Data";
-  opf.lpstrTitle = "Open KKP";
-  opf.nFileOffset = 0;
-  opf.nFileExtension = 0;
-  opf.lpstrDefExt = "kkp";
-  opf.lpfnHook = NULL;
-  opf.lCustData = 0;
-  opf.Flags = ( OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NONETWORKBUTTON ) & ~OFN_ALLOWMULTISELECT;
-  opf.lStructSize = sizeof( OPENFILENAME );
-
-  opf.hInstance = GetModuleHandle( 0 );
-  opf.pvReserved = NULL;
-  opf.dwReserved = 0;
-  opf.FlagsEx = 0;
-
-  if ( GetOpenFileNameA( &opf ) )
-  {
-    SetCurrentDirectoryA( dir );
-    kkp.Load( std::string( opf.lpstrFile ) );
-  }
-
-  SetCurrentDirectoryA( dir );
+  if ( !r.empty() )
+    kkp.Load( r );
 }
 
 void OpenSYM()
 {
-  char dir[ 1024 ];
-  if ( !GetCurrentDirectoryA( 1024, dir ) )
-    memset( dir, 0, sizeof( char ) * 1024 );
+  static const file_dialog_filter flt = { "Symbol map files", "*.sym" };
+  std::string r = platform_open_file_dialog( "Open SYM", 1, &flt, "Data" );
 
-  char Filestring[ 256 ];
-
-  OPENFILENAMEA opf;
-  opf.hwndOwner = 0;
-  opf.lpstrFilter = "Symbol map files\0*.sym\0\0";
-  opf.lpstrCustomFilter = 0;
-  opf.nMaxCustFilter = 0L;
-  opf.nFilterIndex = 1L;
-  opf.lpstrFile = Filestring;
-  opf.lpstrFile[ 0 ] = '\0';
-  opf.nMaxFile = 256;
-  opf.lpstrFileTitle = 0;
-  opf.nMaxFileTitle = 50;
-  opf.lpstrInitialDir = "Data";
-  opf.lpstrTitle = "Open SYM";
-  opf.nFileOffset = 0;
-  opf.nFileExtension = 0;
-  opf.lpstrDefExt = "sym";
-  opf.lpfnHook = NULL;
-  opf.lCustData = 0;
-  opf.Flags = ( OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_NONETWORKBUTTON ) & ~OFN_ALLOWMULTISELECT;
-  opf.lStructSize = sizeof( OPENFILENAME );
-
-  opf.hInstance = GetModuleHandle( 0 );
-  opf.pvReserved = NULL;
-  opf.dwReserved = 0;
-  opf.FlagsEx = 0;
-
-  if ( GetOpenFileNameA( &opf ) )
-  {
-    SetCurrentDirectoryA( dir );
-    kkp.LoadSym( std::string( opf.lpstrFile ) );
-  }
-
-  SetCurrentDirectoryA( dir );
+  if ( !r.empty() )
+    kkp.LoadSym( r );
 }
 
 std::string ReadASCIIZ( FILE* f )
@@ -130,7 +68,7 @@ void KKP::AddSymbol( const KKPSymbol& symbol )
     currNode->cumulativePackedSize += symbol.packedSize;
     currNode->cumulativeUnpackedSize += symbol.unpackedSize;
     if ( symbol.sourcePos )
-      currNode->sourcePos = min( currNode->sourcePos, symbol.sourcePos );
+      currNode->sourcePos = std::min( currNode->sourcePos, symbol.sourcePos );
 
     bool found = false;
     for ( auto& c : currNode->children )
@@ -209,7 +147,7 @@ void SortNode( KKP::KKPSymbol& symbol, int sortColumn, bool descending )
 
 void KKP::Sort( int sortColumn, bool descending )
 {
-  SortNode(root, sortColumn, descending);
+  SortNode( root, sortColumn, descending );
 
   switch ( sortColumn )
   {
@@ -268,6 +206,54 @@ void BuildSymbolList( std::vector<KKP::KKPSymbol>& target, const KKP::KKPSymbol&
 
 bool KKP::isX64 = false;
 
+
+void KKP::Check64Bit( int sourceSize )
+{
+  IMAGE_DOS_HEADER dosHeader;
+
+  if ( sourceSize >= sizeof( dosHeader ) )
+  {
+    for ( int x = 0; x < sizeof( dosHeader ); x++ )
+      ( (unsigned char*)&dosHeader )[ x ] = bytes[ x ].data;
+
+    if ( dosHeader.e_magic == IMAGE_DOS_SIGNATURE )
+    {
+      IMAGE_NT_HEADERS peHeader;
+      if ( (unsigned int)sourceSize >= sizeof( peHeader ) + dosHeader.e_lfanew )
+      {
+        for ( int x = 0; x < sizeof( peHeader ); x++ )
+          ( (unsigned char*)&peHeader )[ x ] = bytes[ x + dosHeader.e_lfanew ].data;
+
+        if ( peHeader.Signature == IMAGE_NT_SIGNATURE )
+        {
+          if ( peHeader.FileHeader.Machine == IMAGE_FILE_MACHINE_AMD64 )
+          {
+            isX64 = true;
+            return;
+          }
+        }
+
+      }
+    }
+  }
+
+  Elf32_Ehdr ehdr;
+  if ( sourceSize >= sizeof( ehdr ) )
+  {
+    for ( int x = 0; x < sizeof( ehdr ); ++x )
+      ( (uint8_t*)&ehdr )[ x ] = bytes[ x ].data;
+
+    if ( !memcmp( ehdr.e_ident, ELFMAG, SELFMAG ) )
+    {
+      if ( ehdr.e_machine == EM_X86_64 )
+      {
+        isX64 = true;
+        return;
+      }
+    }
+  }
+}
+
 void KKP::Load( const std::string& fileName )
 {
   isX64 = false;
@@ -280,13 +266,13 @@ void KKP::Load( const std::string& fileName )
     return;
 
   int sourceSize = 0;
-  unsigned int fourCC = 0;
+  uint8_t fourCC[ 4 ] = { 0 };
   int fileCount = 0;
 
-  if ( !fread_s( &fourCC, 4, 4, 1, reader ) )
+  if ( !fread_s( fourCC, 4, 1, 4, reader ) )
     goto closeFile;
 
-  if ( fourCC != '46KK' )
+  if ( memcmp( fourCC, "KK64", 4 ) )
     goto closeFile;
 
   if ( !fread_s( &sourceSize, 4, 4, 1, reader ) )
@@ -353,30 +339,7 @@ void KKP::Load( const std::string& fileName )
   if ( fread_s( bytes.data(), sourceSize * sizeof( KKPByteData ), sizeof( KKPByteData ), sourceSize, reader ) != sourceSize )
     goto closeFile;
 
-  IMAGE_DOS_HEADER dosHeader;
-  if ( sourceSize >= sizeof( dosHeader ) )
-  {
-    for ( int x = 0; x < sizeof( dosHeader ); x++ )
-      ( (unsigned char*)&dosHeader )[ x ] = bytes[ x ].data;
-
-    if ( dosHeader.e_magic == IMAGE_DOS_SIGNATURE )
-    {
-      IMAGE_NT_HEADERS peHeader;
-      if ( sourceSize >= sizeof( peHeader ) + dosHeader.e_lfanew )
-      {
-        for ( int x = 0; x < sizeof( peHeader ); x++ )
-          ( (unsigned char*)&peHeader )[ x ] = bytes[ x + dosHeader.e_lfanew ].data;
-
-        if ( peHeader.Signature == IMAGE_NT_SIGNATURE )
-        {
-          if ( peHeader.FileHeader.Machine == IMAGE_FILE_MACHINE_AMD64 )
-            isX64 = true;
-        }
-
-      }
-    }
-  }
-
+  Check64Bit( sourceSize );
 
 closeFile:
   fclose( reader );
@@ -392,11 +355,11 @@ void KKP::LoadSym( const std::string& fileName )
   int symbolStart = 0;
   int symbolSize = 0;
 
-  unsigned int fourCC = 0;
-  if ( !fread_s( &fourCC, 4, 4, 1, reader ) )
+  uint8_t fourCC[ 4 ] = { 0 };
+  if ( !fread_s( fourCC, 4, 1, 4, reader ) )
     goto closeFile;
 
-  if ( fourCC != 'PXHP' )
+  if ( memcmp( fourCC, "PHXP", 4 ) )
     goto closeFile;
 
   {
@@ -430,7 +393,7 @@ void KKP::LoadSym( const std::string& fileName )
 
     int maxSymbolID = 0;
     for ( auto& symbol : kkp.sortableSymbols )
-      maxSymbolID = max( maxSymbolID, symbol.originalSymbolID );
+      maxSymbolID = std::max( maxSymbolID, symbol.originalSymbolID );
 
     for ( int x = 0; x < symbolCount; x++ )
     {
@@ -454,7 +417,7 @@ void KKP::LoadSym( const std::string& fileName )
 
       kkp.bytes[ x ].symbol = (short)symbol.originalSymbolID;
 
-      if ( symbol.sourcePos == -1 )
+      if ( symbol.sourcePos == -1 ) // unsigned-signed comparison???? -pcy
         symbol.sourcePos = x;
 
       symbol.unpackedSize++;

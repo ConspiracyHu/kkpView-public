@@ -144,7 +144,7 @@
     <ClCompile Include="ImGui\imgui_widgets.cpp" />
     <ClCompile Include="kkp.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="window.cpp" />
+    <ClCompile Include="platform\dx11.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImGui\backends\imgui_impl_dx11.h" />
@@ -158,7 +158,7 @@
     <ClInclude Include="kkp.h" />
     <ClInclude Include="profont.h" />
     <ClInclude Include="version.h" />
-    <ClInclude Include="window.h" />
+    <ClInclude Include="startup.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="zydis\msvc\zydis\Zydis.vcxproj">
