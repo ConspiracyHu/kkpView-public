@@ -183,7 +183,7 @@ void OpenSourceFile( int fileIndex, bool force = false )
     return;
   }
 
-  if ( fileIndex < 0 || !kkp.files[ fileIndex ].name.size() )
+  if ( fileIndex < 0 || fileIndex >= kkp.files.size() || !kkp.files[ fileIndex ].name.size() )
   {
     SourceLine line = { 0, 0, 0, 0, "No source code associated with symbol" };
     sourceCode.emplace_back( line );
@@ -211,6 +211,11 @@ void OpenSourceFile( int fileIndex, bool force = false )
         return;
       }
     }
+  }
+
+  if ( f == nullptr )
+  {
+    return; // welp, couldn't find it
   }
 
   struct LineSizeInfo
@@ -644,7 +649,7 @@ void DrawCodeView()
       if ( !filepath.empty() )
       {
         size_t filepathlen = filepath.size();
-        for ( size_t i = source.length(), j = filepathlen; i >= 0 && j >= 0; i--, j-- )
+        for ( ssize_t i = source.length(), j = filepathlen; i >= 0 && j >= 0; i--, j-- )
         {
           if ( source[ i ] != filepath[ j ] )
           {
