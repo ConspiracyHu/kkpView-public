@@ -890,7 +890,7 @@ void SetSymbolColumns( const KKP::KKPSymbol& symbol )
     ratio = 0;
 
   ImGui::TableSetColumnIndex( 1 );
-  ImGui::Text( "%d", symbol.sourcePos );
+  ImGui::Text( "0x%08x (%d)", symbol.sourcePos, symbol.sourcePos );
 
   ImGui::TableSetColumnIndex( 2 );
   ImGui::Text( "%d", symbol.cumulativeUnpackedSize );
